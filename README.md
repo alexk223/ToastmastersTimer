@@ -1,0 +1,1 @@
+The purpose of this HTML timer is to automate the timing process and alert the human Timer exactly when to change the lights. This reduces the cognitive load, allowing the Timer to pay closer attention to the speech without being distracted by tracking seconds.
