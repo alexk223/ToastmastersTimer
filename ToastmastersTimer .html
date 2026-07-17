@@ -28,7 +28,7 @@
             50% { background-color: #212121; color: white; }
         }
         body.stage-green { background-color: #4CAF50 !important; color: white; }
-        body.stage-yellow { animation: blinkOrange 1s infinite; }
+        body.stage-orange { animation: blinkOrange 1s infinite; }
         body.stage-red { animation: blinkRed 1s infinite; }
 
         /* Sticky Timer */
@@ -134,8 +134,8 @@
         <div class="picker-row" style="border-left: 5px solid #FFC107;">
             <label>Yellow</label>
             <div>
-                <select id="yellowMin"></select> m
-                <select id="yellowSec"></select> s
+                <select id="orangeMin"></select> m
+                <select id="orangeSec"></select> s
             </div>
         </div>
         <div class="picker-row" style="border-left: 5px solid #F44336;">
@@ -175,7 +175,7 @@
                 }
             });
             document.getElementById('greenMin').value = "1";
-            document.getElementById('yellowMin').value = "5";
+            document.getElementById('orangeMin').value = "5";
             document.getElementById('redMin').value = "7";
         }
         setupPickers();
@@ -205,7 +205,7 @@
                 
                 let colorHex = '#BBBBBB';
                 if (document.body.classList.contains('stage-red')) colorHex = '#F44336';
-                else if (document.body.classList.contains('stage-yellow')) colorHex = '#FF9800';
+                else if (document.body.classList.contains('stage-orange')) colorHex = '#FF9800';
                 else if (document.body.classList.contains('stage-green')) colorHex = '#4CAF50';
 
                 logs.unshift({ text: `Speech Duration: ${elapsedStr}`, color: colorHex });
@@ -231,14 +231,14 @@
                 `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
 
             const green = getSeconds('greenMin', 'greenSec');
-            const yellow = getSeconds('yellowMin', 'yellowSec');
+            const orange = getSeconds('orangeMin', 'orangeSec');
             const red = getSeconds('redMin', 'redSec');
 
             document.body.className = '';
             if (elapsed >= red) {
                 document.body.classList.add('stage-red');
-            } else if (elapsed >= yellow) {
-                document.body.classList.add('stage-yellow');
+            } else if (elapsed >= orange) {
+                document.body.classList.add('stage-orange');
             } else if (elapsed >= green) {
                 document.body.classList.add('stage-green');
             }
