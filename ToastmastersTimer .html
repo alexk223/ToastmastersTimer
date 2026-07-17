@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Papatoetoe Toastmasters Timer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Avenir Next', Avenir, sans-serif;
+        }
+        body {
+            background-color: #212121;
+            color: white;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.2s;
+            min-height: 100vh;
+        }
+        
+        /* Blinking Animations */
+        @keyframes blinkOrange {
+            0%, 100% { background-color: #FF9800; color: black; }
+            50% { background-color: #212121; color: white; }
+        }
+        @keyframes blinkRed {
+            0%, 100% { background-color: #F44336; color: white; }
+            50% { background-color: #212121; color: white; }
+        }
+        body.stage-green { background-color: #4CAF50 !important; color: white; }
+        body.stage-yellow { animation: blinkOrange 1s infinite; }
+        body.stage-red { animation: blinkRed 1s infinite; }
+
+        /* Sticky Timer */
+        #top-section {
+            position: sticky;
+            top: 0;
+            background-color: inherit;
+            padding: 20px;
+            z-index: 100;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        h1 {
+            font-size: 18px;
+            margin: 0 0 10px 0;
+            opacity: 0.8;
+        }
+        #timerDisplay {
+            font-size: 80px;
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+            margin: 0;
+        }
+
+        /* Controls */
+        #content {
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .picker-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+        }
+        .picker-row label {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        select {
+            font-size: 18px;
+            padding: 5px 10px;
+            border-radius: 8px;
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            appearance: none;
+            text-align: center;
+            width: 70px;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+        }
+        button {
+            flex: 1;
+            padding: 15px;
+            font-size: 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+        }
+        #startBtn { background-color: #4CAF50; }
+        #stopBtn { background-color: #F44336; }
+        #resetBtn { background-color: #616161; }
+
+        /* Logs */
+        #logTable {
+            margin-top: 10px;
+            border-top: 1px solid #444;
+        }
+        .log-entry {
+            padding: 15px 10px;
+            border-bottom: 1px solid #444;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="top-section">
+        <h1>Papatoetoe Toastmasters Timer</h1>
+        <div id="timerDisplay">00:00</div>
+    </div>
+
+    <div id="content">
+        <div class="picker-row" style="border-left: 5px solid #4CAF50;">
+            <label>Green</label>
+            <div>
+                <select id="greenMin"></select> m
+                <select id="greenSec"></select> s
+            </div>
+        </div>
+        <div class="picker-row" style="border-left: 5px solid #FFC107;">
+            <label>Yellow</label>
+            <div>
+                <select id="yellowMin"></select> m
+                <select id="yellowSec"></select> s
+            </div>
+        </div>
+        <div class="picker-row" style="border-left: 5px solid #F44336;">
+            <label>Red</label>
+            <div>
+                <select id="redMin"></select> m
+                <select id="redSec"></select> s
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button id="startBtn" onclick="startTimer()">Start</button>
+            <button id="stopBtn" onclick="stopTimer()">Stop</button>
+            <button id="resetBtn" onclick="resetTimer()">Reset</button>
+        </div>
+
+        <div id="logTable"></div>
+    </div>
+
+    <script>
+        let running = false;
+        let startTime = null;
+        let timerInterval = null;
+        let logs = [];
+
+        // Setup the iOS-style dial dropdowns
+        function setupPickers() {
+            const selects = document.querySelectorAll('select');
+            selects.forEach(select => {
+                const isMin = select.id.includes('Min');
+                const max = isMin ? 60 : 59;
+                for (let i = 0; i <= max; i++) {
+                    let opt = document.createElement('option');
+                    opt.value = i;
+                    opt.text = i.toString().padStart(2, '0');
+                    select.appendChild(opt);
+                }
+            });
+            document.getElementById('greenMin').value = "1";
+            document.getElementById('yellowMin').value = "5";
+            document.getElementById('redMin').value = "7";
+        }
+        setupPickers();
+
+        function getSeconds(minId, secId) {
+            return (parseInt(document.getElementById(minId).value) * 60) + parseInt(document.getElementById(secId).value);
+        }
+
+        function startTimer() {
+            if (!running) {
+                running = true;
+                startTime = Date.now();
+                document.body.className = '';
+                timerInterval = setInterval(updateTimer, 50);
+            }
+        }
+
+        function stopTimer() {
+            if (running) {
+                running = false;
+                clearInterval(timerInterval);
+                
+                const elapsedSeconds = (Date.now() - startTime) / 1000;
+                const m = Math.floor(elapsedSeconds / 60);
+                const s = Math.floor(elapsedSeconds % 60);
+                const elapsedStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                
+                let colorHex = '#BBBBBB';
+                if (document.body.classList.contains('stage-red')) colorHex = '#F44336';
+                else if (document.body.classList.contains('stage-yellow')) colorHex = '#FF9800';
+                else if (document.body.classList.contains('stage-green')) colorHex = '#4CAF50';
+
+                logs.unshift({ text: `Speech Duration: ${elapsedStr}`, color: colorHex });
+                updateLogDisplay();
+                document.body.className = ''; 
+            }
+        }
+
+        function resetTimer() {
+            running = false;
+            clearInterval(timerInterval);
+            document.getElementById('timerDisplay').innerText = '00:00.000';
+            document.body.className = '';
+        }
+
+        function updateTimer() {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const m = Math.floor(elapsed / 60);
+            const s = Math.floor(elapsed % 60);
+            const ms = Math.floor((elapsed - Math.floor(elapsed)) * 1000);
+            
+            document.getElementById('timerDisplay').innerText = 
+                `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+
+            const green = getSeconds('greenMin', 'greenSec');
+            const yellow = getSeconds('yellowMin', 'yellowSec');
+            const red = getSeconds('redMin', 'redSec');
+
+            document.body.className = '';
+            if (elapsed >= red) {
+                document.body.classList.add('stage-red');
+            } else if (elapsed >= yellow) {
+                document.body.classList.add('stage-yellow');
+            } else if (elapsed >= green) {
+                document.body.classList.add('stage-green');
+            }
+        }
+
+        function updateLogDisplay() {
+            const logContainer = document.getElementById('logTable');
+            logContainer.innerHTML = '';
+            logs.forEach(log => {
+                const div = document.createElement('div');
+                div.className = 'log-entry';
+                div.style.color = log.color;
+                div.innerText = log.text;
+                logContainer.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>
