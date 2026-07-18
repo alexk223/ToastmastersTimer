@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Papatoetoe Toastmasters Timer</title>
+    <!-- Include jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
     <style>
         * {
             box-sizing: border-box;
@@ -14,17 +18,17 @@
             color: white;
             margin: 0;
             padding: 0;
-            transition: background-color 0.2s;
             min-height: 100vh;
+            transition: background-color 0.2s;
         }
         
-        /* Blinking Animations for Backgrounds */
+        /* Blinking Animations applied to the whole screen */
         @keyframes blinkGreen {
             0%, 100% { background-color: #4CAF50; color: white; }
             50% { background-color: #212121; color: white; }
         }
-        @keyframes blinkyellow {
-            0%, 100% { background-color: #FF9800; color: black; }
+        @keyframes blinkYellow {
+            0%, 100% { background-color: #FFC107; color: black; }
             50% { background-color: #212121; color: white; }
         }
         @keyframes blinkRed {
@@ -37,23 +41,23 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0; }
         }
-        .text-blink { animation: textBlink 1s ease 2; } /* blinks twice over 2 seconds */
+        .text-blink { animation: textBlink 1s ease 2; }
 
-        /* Solid Stage Colors */
+        /* Solid Stage Colors applied to the whole screen */
         body.stage-green { background-color: #4CAF50 !important; color: white; }
-        body.stage-yellow { background-color: #FF9800 !important; color: black; }
+        body.stage-yellow { background-color: #FFC107 !important; color: black; }
         body.stage-red { background-color: #F44336 !important; color: white; }
 
-        /* Blinking Stage Colors */
+        /* Blinking Stage Colors applied to the whole screen */
         body.blink-green { animation: blinkGreen 1s infinite; }
-        body.blink-yellow { animation: blinkyellow 1s infinite; }
+        body.blink-yellow { animation: blinkYellow 1s infinite; }
         body.blink-red { animation: blinkRed 1s infinite; }
 
         /* Sticky Timer */
         #top-section {
             position: sticky;
             top: 0;
-            background-color: inherit;
+            background-color: transparent; /* Lets the body color show through */
             padding: 20px;
             z-index: 100;
             border-bottom: 2px solid rgba(255,255,255,0.1);
@@ -85,13 +89,15 @@
         /* Compact Settings Grid */
         .settings-grid {
             display: grid;
-            grid-template-columns: 1fr 2fr 1fr 1fr;
+            grid-template-columns: max-content max-content max-content max-content; 
             align-items: center;
+            justify-content: center; 
             background: rgba(255,255,255,0.1);
-            padding: 10px;
+            padding: 15px;
             border-radius: 10px;
             text-align: center;
             row-gap: 12px;
+            column-gap: 20px; 
         }
         .grid-header {
             font-size: 14px;
@@ -101,29 +107,31 @@
         }
         .stage-label {
             font-weight: bold;
-            font-size: 16px;
+            font-size: 15px;
+            text-align: left;
         }
         .time-inputs {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 4px;
+            gap: 2px; 
         }
         
         select {
             font-size: 16px;
-            padding: 4px 6px;
+            padding: 2px 4px;
             border-radius: 6px;
             background: #333;
             color: white;
             border: 1px solid #555;
             appearance: none;
             text-align: center;
-            width: 55px;
+            width: 45px; 
         }
         input[type="checkbox"] {
             transform: scale(1.3);
             cursor: pointer;
+            margin: 0;
         }
         
         .buttons {
@@ -131,10 +139,10 @@
             gap: 15px;
         }
         .buttons button {
-            flex: 1; /* Equal sizes */
+            flex: 1; 
             padding: 15px;
             font-size: 20px;
-            border: 3px solid white; /* Medium thickness white border */
+            border: 3px solid white; 
             border-radius: 10px;
             cursor: pointer;
             color: white;
@@ -148,7 +156,11 @@
             flex-direction: column;
             align-items: flex-start;
             margin-top: 10px;
-            gap: 5px;
+            gap: 8px;
+        }
+        .action-buttons-row {
+            display: flex;
+            gap: 10px;
         }
         #resetBtn { 
             background-color: #616161; 
@@ -160,9 +172,19 @@
             color: white;
             font-weight: bold;
         }
+        #exportBtn {
+            background-color: #2196F3; 
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+        }
         .note-text {
             font-size: 12px;
-            color: #AAAAAA;
+            opacity: 0.8;
         }
         .note-text a {
             color: #4CAF50;
@@ -172,31 +194,43 @@
             text-decoration: underline;
         }
 
-        /* Logs */
+        /* Logs Table Styles */
         #logSection {
             margin-top: 10px;
-            border-top: 1px solid #444;
             padding-top: 10px;
         }
         .log-header-text {
             font-size: 16px;
             font-weight: bold;
             margin-bottom: 10px;
+            opacity: 0.8;
+        }
+        
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #212121; /* Keeps dark background regardless of screen color */
+            border-radius: 8px;
+            overflow: hidden; /* Enables rounded corners on the table */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            color: white; /* Ensures text stays readable */
+        }
+        .log-table th {
+            background-color: rgba(255,255,255,0.1);
+            text-align: left;
+            padding: 12px;
+            font-size: 14px;
             color: #AAAAAA;
         }
-        .log-entry {
-            padding: 12px 10px;
+        .log-table td {
+            padding: 12px;
             border-bottom: 1px solid #444;
-            font-size: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            font-size: 15px;
         }
-        .log-details {
-            font-size: 14px;
-            opacity: 0.8;
-            margin-top: 4px;
+        .log-table tr:last-child td {
+            border-bottom: none;
         }
+
         .editable-name {
             font-weight: bold;
             border-bottom: 1px dashed rgba(255,255,255,0.4);
@@ -223,7 +257,7 @@
         <!-- Compact Table Grid for Space Saving -->
         <div class="settings-grid">
             <div class="grid-header">Stage</div>
-            <div class="grid-header">Time(Minutes:Seconds)</div>
+            <div class="grid-header">Time(m:s)</div>
             <div class="grid-header">Blink</div>
             <div class="grid-header">Sound</div>
 
@@ -235,8 +269,8 @@
             <div><input type="checkbox" id="greenBlink"></div>
             <div><input type="checkbox" id="greenSound"></div>
 
-            <!-- yellow Row -->
-            <div class="stage-label" style="color: #FF9800;">yellow</div>
+            <!-- Golden Yellow Row -->
+            <div class="stage-label" style="color: #FFC107;">Yellow</div>
             <div class="time-inputs">
                 <select id="yellowMin"></select>:<select id="yellowSec"></select>
             </div>
@@ -258,26 +292,29 @@
         </div>
         
         <div class="bottom-actions">
-            <button id="resetBtn" onclick="resetTimer()">Reset</button>
+            <div class="action-buttons-row">
+                <button id="resetBtn" onclick="resetTimer()">Reset</button>
+                <button id="exportBtn" onclick="exportPDF()">Export PDF & Email</button>
+            </div>
             <div class="note-text">(sound works on Chrome browser and not silent mode)</div>
             <div class="note-text">for feedbacks email <a href="mailto:alexkurian@live.com">alexkurian@live.com</a></div>
         </div>
 
         <div id="logSection">
             <div class="log-header-text">Timing Logs</div>
-            <div id="logTable"></div>
+            <div id="logTableContainer"></div>
         </div>
     </div>
 
     <script>
         let running = false;
-        let isStopping = false; // prevents duplicate stop button clicks
+        let isStopping = false;
         let startTime = null;
         let startClockDate = null;
         let timerInterval = null;
         let logs = [];
         let speakerCount = 0;
-        let wakeLock = null; // Screen keep-awake feature
+        let wakeLock = null;
 
         // Audio Context for the buzzer
         let audioCtx = null;
@@ -288,7 +325,6 @@
         let redSoundPlayed = false;
         let lastRedBuzzerTime = 0;
 
-        // Setup the iOS-style dial dropdowns
         function setupPickers() {
             const selects = document.querySelectorAll('select');
             selects.forEach(select => {
@@ -301,7 +337,6 @@
                     select.appendChild(opt);
                 }
             });
-            // Default Values
             document.getElementById('greenMin').value = "1";
             document.getElementById('yellowMin').value = "5";
             document.getElementById('redMin').value = "7";
@@ -312,17 +347,16 @@
             return (parseInt(document.getElementById(minId).value) * 60) + parseInt(document.getElementById(secId).value);
         }
         
-        // Format AM/PM Time (12-hour clock)
         function formatClockTime(dateObj) {
+            if (!dateObj) return "--:--";
             let hh = dateObj.getHours();
             let mm = dateObj.getMinutes().toString().padStart(2, '0');
             const ampm = hh >= 12 ? 'PM' : 'AM';
             hh = hh % 12;
-            hh = hh ? hh : 12; // 0 becomes 12
+            hh = hh ? hh : 12;
             return `${hh}:${mm} ${ampm}`;
         }
 
-        // Keep Screen Awake Function
         async function requestWakeLock() {
             try {
                 if ('wakeLock' in navigator) {
@@ -332,14 +366,13 @@
                 console.log('Wake Lock Error:', err.message);
             }
         }
-        // Re-request wake lock when returning to the tab
+        
         document.addEventListener('visibilitychange', async () => {
             if (wakeLock !== null && document.visibilityState === 'visible') {
                 requestWakeLock();
             }
         });
 
-        // Web Audio API Buzzer Function
         function playBuzzer() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -348,22 +381,21 @@
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             
-            oscillator.type = 'square'; // Buzzer-like sound
-            oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // 440 Hz
-            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Volume
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); 
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); 
             
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             
             oscillator.start();
-            setTimeout(() => oscillator.stop(), 500); // Plays for 0.5 seconds
+            setTimeout(() => oscillator.stop(), 500);
         }
 
         function startTimer() {
-            requestWakeLock(); // Trigger keep screen awake
+            requestWakeLock(); 
 
             if (!running && !isStopping) {
-                // Initialize audio context on first user interaction to bypass browser restrictions
                 if (!audioCtx) {
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 }
@@ -375,7 +407,6 @@
                 startTime = Date.now();
                 startClockDate = new Date();
                 
-                // Reset sound states for the new speaker
                 greenSoundPlayed = false;
                 yellowSoundPlayed = false;
                 redSoundPlayed = false;
@@ -383,16 +414,25 @@
                 
                 document.body.className = '';
                 timerInterval = setInterval(updateTimer, 100); 
+
+                speakerCount++;
+                logs.unshift({ 
+                    title: `Speaker ${speakerCount}`, 
+                    startTime: startClockDate,
+                    endTime: null,
+                    duration: '-- minutes : -- seconds',
+                    color: '#BBBBBB' 
+                });
+                updateLogDisplay();
             }
         }
 
         function stopTimer() {
             if (running && !isStopping) {
                 running = false;
-                isStopping = true; // Lock timer state during the stop animation
+                isStopping = true; 
                 clearInterval(timerInterval);
                 
-                // Remove background blinking immediately
                 document.body.className = ''; 
 
                 const endClockDate = new Date();
@@ -400,40 +440,34 @@
                 const m = Math.floor(elapsedSeconds / 60);
                 const s = Math.floor(elapsedSeconds % 60);
                 
-                // Format xx minutes : xx seconds for the log
                 const elapsedStrForLog = `${m.toString().padStart(2, '0')} minutes : ${s.toString().padStart(2, '0')} seconds`;
                 
                 let colorHex = '#BBBBBB';
                 if (elapsedSeconds >= getSeconds('redMin', 'redSec')) colorHex = '#F44336';
-                else if (elapsedSeconds >= getSeconds('yellowMin', 'yellowSec')) colorHex = '#FF9800';
+                else if (elapsedSeconds >= getSeconds('yellowMin', 'yellowSec')) colorHex = '#FFC107';
                 else if (elapsedSeconds >= getSeconds('greenMin', 'greenSec')) colorHex = '#4CAF50';
 
-                speakerCount++;
-                const timeFrame = `${formatClockTime(startClockDate)} - ${formatClockTime(endClockDate)}`;
-                
-                logs.unshift({ 
-                    title: `Speaker ${speakerCount}`, 
-                    timeFrame: timeFrame,
-                    duration: elapsedStrForLog,
-                    color: colorHex 
-                });
+                if (logs.length > 0) {
+                    logs[0].endTime = endClockDate;
+                    logs[0].duration = elapsedStrForLog;
+                    logs[0].color = colorHex;
+                }
                 
                 updateLogDisplay();
 
-                // Blink numbers for 2 seconds -> Reset Screen
                 const display = document.getElementById('timerDisplay');
-                display.classList.add('text-blink'); // Start text blinking animation
+                display.classList.add('text-blink');
                 
                 setTimeout(() => {
                     display.innerText = '00:00';
                     display.classList.remove('text-blink');
-                    isStopping = false; // Unlock timer
-                }, 2000); // 2 seconds
+                    isStopping = false; 
+                }, 2000); 
             }
         }
 
         function resetTimer() {
-            const userConfirmed = confirm("Make sure to write down timing log before resetting. Proceed with reset? Yes or No");
+            const userConfirmed = confirm("Make sure to write down or export the timing log before resetting. Proceed with reset? Yes or No");
             
             if (userConfirmed) {
                 running = false;
@@ -445,12 +479,10 @@
                 display.classList.remove('text-blink');
                 document.body.className = '';
                 
-                // Reset Logs
                 logs = [];
                 speakerCount = 0;
                 updateLogDisplay();
                 
-                // Reset pickers to default
                 document.getElementById('greenMin').value = "1";
                 document.getElementById('greenSec').value = "0";
                 document.getElementById('yellowMin').value = "5";
@@ -458,7 +490,6 @@
                 document.getElementById('redMin').value = "7";
                 document.getElementById('redSec').value = "0";
                 
-                // Uncheck all toggles
                 document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
             }
         }
@@ -508,29 +539,117 @@
             }
         }
 
-        // Save edited name back to the array so it isn't overwritten on next timer update
         function saveEditedName(index, element) {
             logs[index].title = element.innerText;
         }
 
         function updateLogDisplay() {
-            const logContainer = document.getElementById('logTable');
-            logContainer.innerHTML = '';
+            const logContainer = document.getElementById('logTableContainer');
+            
+            if (logs.length === 0) {
+                logContainer.innerHTML = '';
+                return;
+            }
+
+            let tableHTML = `
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>Speaker Name</th>
+                            <th>Time (Start-Finish)</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
             logs.forEach((log, index) => {
-                const div = document.createElement('div');
-                div.className = 'log-entry';
-                div.style.color = log.color;
-                
-                div.innerHTML = `
-                    <div>
-                        <div class="editable-name" contenteditable="true" onblur="saveEditedName(${index}, this)" spellcheck="false">${log.title}</div>
-                        <div class="log-details">${log.timeFrame}</div>
-                    </div>
-                    <div>${log.duration}</div>
+                const timeFrame = log.endTime 
+                    ? `${formatClockTime(log.startTime)} - ${formatClockTime(log.endTime)}` 
+                    : `${formatClockTime(log.startTime)} - --:--`;
+
+                tableHTML += `
+                    <tr style="color: ${log.color};">
+                        <td>
+                            <div class="editable-name" contenteditable="true" onblur="saveEditedName(${index}, this)" spellcheck="false">${log.title}</div>
+                        </td>
+                        <td style="opacity: 0.9; font-size: 14px;">${timeFrame}</td>
+                        <td>${log.duration}</td>
+                    </tr>
                 `;
-                
-                logContainer.appendChild(div);
             });
+
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            logContainer.innerHTML = tableHTML;
+        }
+
+        function exportPDF() {
+            if (logs.length === 0) {
+                alert("No timing logs to export yet!");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
+            
+            doc.setFontSize(16);
+            doc.text(`Timing Logs for meeting of ${dateStr}`, 14, 20);
+            
+            const tableData = [...logs].reverse().map((log, index) => {
+                const timeFrame = log.endTime 
+                    ? `${formatClockTime(log.startTime)} - ${formatClockTime(log.endTime)}` 
+                    : `${formatClockTime(log.startTime)} - In Progress`;
+                
+                return [
+                    index + 1,
+                    log.title,
+                    timeFrame,
+                    log.duration
+                ];
+            });
+
+            doc.autoTable({
+                startY: 30,
+                head: [['', 'Speaker Name', 'Time', 'Duration']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [76, 175, 80] }, 
+                didParseCell: function(data) {
+                    if (data.section === 'body') {
+                        const originalLog = [...logs].reverse()[data.row.index];
+                        if (originalLog.color === '#4CAF50') {
+                            data.cell.styles.fillColor = [76, 175, 80]; // Green
+                            data.cell.styles.textColor = [255, 255, 255];
+                        } else if (originalLog.color === '#FFC107') {
+                            data.cell.styles.fillColor = [255, 193, 7]; // Yellow
+                            data.cell.styles.textColor = [0, 0, 0];
+                        } else if (originalLog.color === '#F44336') {
+                            data.cell.styles.fillColor = [244, 67, 54]; // Red
+                            data.cell.styles.textColor = [255, 255, 255];
+                        }
+                    }
+                }
+            });
+
+            const finalY = doc.lastAutoTable.finalY || 30;
+            doc.setFontSize(10);
+            // Updated footer text as requested
+            doc.text("Prepared with https://alexk223.github.io/ToastmastersTimer/", 14, finalY + 15);
+            doc.text("For feedbacks contact alexkurian@live.com", 14, finalY + 22);
+
+            doc.save(`Timing_Logs_${dateStr}.pdf`);
+
+            const subject = encodeURIComponent(`Timing Logs for meeting of ${dateStr}`);
+            const body = encodeURIComponent(`Hi everyone,\n\nPlease find the timing logs attached for the meeting on ${dateStr}.\n(Note: Please attach the PDF that was just downloaded to your device).\n\nPrepared with https://alexk223.github.io/ToastmastersTimer/\nFor feedbacks contact alexkurian@live.com`);
+            
+            window.location.href = `mailto:?subject=${subject}&body=${body}`;
         }
     </script>
 </body>
