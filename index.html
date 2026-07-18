@@ -27,9 +27,15 @@
             0%, 100% { background-color: #F44336; color: white; }
             50% { background-color: #212121; color: white; }
         }
+        
+        /* Solid Stage Colors */
         body.stage-green { background-color: #4CAF50 !important; color: white; }
-        body.stage-orange { animation: blinkOrange 1s infinite; }
-        body.stage-red { animation: blinkRed 1s infinite; }
+        body.stage-orange { background-color: #FF9800 !important; color: black; }
+        body.stage-red { background-color: #F44336 !important; color: white; }
+
+        /* Blinking Stage Colors */
+        body.blink-orange { animation: blinkOrange 1s infinite; }
+        body.blink-red { animation: blinkRed 1s infinite; }
 
         /* Sticky Timer */
         #top-section {
@@ -62,6 +68,23 @@
             flex-direction: column;
             gap: 20px;
         }
+        
+        /* Toggles */
+        .toggles-row {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .toggles-row label {
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .picker-row {
             display: flex;
             align-items: center;
@@ -90,8 +113,8 @@
             display: flex;
             gap: 15px;
         }
-        button {
-            flex: 1;
+        .buttons button {
+            flex: 1; /* Makes Start and Stop buttons equal size */
             padding: 15px;
             font-size: 20px;
             border: none;
@@ -102,7 +125,21 @@
         }
         #startBtn { background-color: #4CAF50; }
         #stopBtn { background-color: #F44336; }
-        #resetBtn { background-color: #616161; }
+        
+        .bottom-actions {
+            display: flex;
+            justify-content: flex-start; /* Aligns reset to bottom left */
+        }
+        #resetBtn { 
+            background-color: #616161; 
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+        }
 
         /* Logs */
         #logTable {
@@ -113,6 +150,12 @@
             padding: 15px 10px;
             border-bottom: 1px solid #444;
             font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .log-details {
+            font-size: 14px;
+            opacity: 0.8;
         }
     </style>
 </head>
@@ -124,6 +167,11 @@
     </div>
 
     <div id="content">
+        <div class="toggles-row">
+            <label><input type="checkbox" id="blinkToggle"> Blink Screen</label>
+            <label><input type="checkbox" id="soundToggle"> Sound Alert</label>
+        </div>
+
         <div class="picker-row" style="border-left: 5px solid #4CAF50;">
             <label>Green</label>
             <div>
@@ -149,6 +197,9 @@
         <div class="buttons">
             <button id="startBtn" onclick="startTimer()">Start</button>
             <button id="stopBtn" onclick="stopTimer()">Stop</button>
+        </div>
+        
+        <div class="bottom-actions">
             <button id="resetBtn" onclick="resetTimer()">Reset</button>
         </div>
 
@@ -158,8 +209,18 @@
     <script>
         let running = false;
         let startTime = null;
+        let startClockDate = null;
         let timerInterval = null;
         let logs = [];
+        let speakerCount = 0;
+
+        // Audio Context for the buzzer
+        let audioCtx = null;
+        
+        // Sound Trigger States
+        let orangeSoundPlayed = false;
+        let redSoundPlayed = false;
+        let lastRedBuzzerTime = 0;
 
         // Setup the iOS-style dial dropdowns
         function setupPickers() {
@@ -183,13 +244,56 @@
         function getSeconds(minId, secId) {
             return (parseInt(document.getElementById(minId).value) * 60) + parseInt(document.getElementById(secId).value);
         }
+        
+        function formatClockTime(dateObj) {
+            const hh = dateObj.getHours().toString().padStart(2, '0');
+            const mm = dateObj.getMinutes().toString().padStart(2, '0');
+            return `${hh}:${mm}`;
+        }
+
+        // Web Audio API Buzzer Function
+        function playBuzzer() {
+            if (!document.getElementById('soundToggle').checked) return;
+            
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.type = 'square'; // Buzzer-like sound
+            oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // 440 Hz
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Volume
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.start();
+            setTimeout(() => oscillator.stop(), 500); // Plays for 0.5 seconds
+        }
 
         function startTimer() {
             if (!running) {
+                // Initialize audio context on first user interaction to bypass browser restrictions
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                
                 running = true;
                 startTime = Date.now();
+                startClockDate = new Date();
+                
+                // Reset sound states for the new speaker
+                orangeSoundPlayed = false;
+                redSoundPlayed = false;
+                lastRedBuzzerTime = 0;
+                
                 document.body.className = '';
-                timerInterval = setInterval(updateTimer, 50);
+                timerInterval = setInterval(updateTimer, 100); // 100ms interval is fine for a seconds timer
             }
         }
 
@@ -198,17 +302,27 @@
                 running = false;
                 clearInterval(timerInterval);
                 
+                const endClockDate = new Date();
                 const elapsedSeconds = (Date.now() - startTime) / 1000;
                 const m = Math.floor(elapsedSeconds / 60);
                 const s = Math.floor(elapsedSeconds % 60);
                 const elapsedStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
                 
                 let colorHex = '#BBBBBB';
-                if (document.body.classList.contains('stage-red')) colorHex = '#F44336';
-                else if (document.body.classList.contains('stage-orange')) colorHex = '#FF9800';
+                if (document.body.classList.contains('stage-red') || document.body.classList.contains('blink-red')) colorHex = '#F44336';
+                else if (document.body.classList.contains('stage-orange') || document.body.classList.contains('blink-orange')) colorHex = '#FF9800';
                 else if (document.body.classList.contains('stage-green')) colorHex = '#4CAF50';
 
-                logs.unshift({ text: `Speech Duration: ${elapsedStr}`, color: colorHex });
+                speakerCount++;
+                const timeFrame = `${formatClockTime(startClockDate)} - ${formatClockTime(endClockDate)}`;
+                
+                logs.unshift({ 
+                    title: `Speaker ${speakerCount}`, 
+                    timeFrame: timeFrame,
+                    duration: elapsedStr,
+                    color: colorHex 
+                });
+                
                 updateLogDisplay();
                 document.body.className = ''; 
             }
@@ -225,20 +339,43 @@
             const elapsed = (Date.now() - startTime) / 1000;
             const m = Math.floor(elapsed / 60);
             const s = Math.floor(elapsed % 60);
-            const ms = Math.floor((elapsed - Math.floor(elapsed)) * 1000);
             
+            // Format Minutes:Seconds (removed ms)
             document.getElementById('timerDisplay').innerText = 
-                `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+                `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 
             const green = getSeconds('greenMin', 'greenSec');
             const orange = getSeconds('orangeMin', 'orangeSec');
             const red = getSeconds('redMin', 'redSec');
+            
+            const isBlinkEnabled = document.getElementById('blinkToggle').checked;
 
             document.body.className = '';
+            
             if (elapsed >= red) {
-                document.body.classList.add('stage-red');
+                document.body.classList.add(isBlinkEnabled ? 'blink-red' : 'stage-red');
+                
+                // First Red Sound
+                if (!redSoundPlayed) {
+                    playBuzzer();
+                    redSoundPlayed = true;
+                    lastRedBuzzerTime = Math.floor(elapsed);
+                } 
+                // Every 10 seconds after Red
+                else if (Math.floor(elapsed) - lastRedBuzzerTime >= 10) {
+                    playBuzzer();
+                    lastRedBuzzerTime = Math.floor(elapsed);
+                }
+                
             } else if (elapsed >= orange) {
-                document.body.classList.add('stage-orange');
+                document.body.classList.add(isBlinkEnabled ? 'blink-orange' : 'stage-orange');
+                
+                // Orange Sound
+                if (!orangeSoundPlayed) {
+                    playBuzzer();
+                    orangeSoundPlayed = true;
+                }
+                
             } else if (elapsed >= green) {
                 document.body.classList.add('stage-green');
             }
@@ -251,7 +388,13 @@
                 const div = document.createElement('div');
                 div.className = 'log-entry';
                 div.style.color = log.color;
-                div.innerText = log.text;
+                
+                // Structure for the log entry: Speaker # (Left) and Times (Right)
+                div.innerHTML = `
+                    <div><strong>${log.title}</strong> <span class="log-details">(${log.timeFrame})</span></div>
+                    <div>${log.duration}</div>
+                `;
+                
                 logContainer.appendChild(div);
             });
         }
