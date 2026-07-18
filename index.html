@@ -32,12 +32,12 @@
             50% { background-color: #212121; color: white; }
         }
         
-        /* Text Blinking Animation for Stop Action */
+        /* Text Blinking Animation for Stop Action (2 Seconds) */
         @keyframes textBlink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0; }
         }
-        .text-blink { animation: textBlink 0.5s ease 2; } /* blinks twice over 1s */
+        .text-blink { animation: textBlink 1s ease 2; } /* blinks twice over 2 seconds */
 
         /* Solid Stage Colors */
         body.stage-green { background-color: #4CAF50 !important; color: white; }
@@ -145,8 +145,10 @@
         
         .bottom-actions {
             display: flex;
-            justify-content: flex-start; /* Aligns reset to bottom left */
+            flex-direction: column;
+            align-items: flex-start;
             margin-top: 10px;
+            gap: 5px;
         }
         #resetBtn { 
             background-color: #616161; 
@@ -157,6 +159,17 @@
             cursor: pointer;
             color: white;
             font-weight: bold;
+        }
+        .note-text {
+            font-size: 12px;
+            color: #AAAAAA;
+        }
+        .note-text a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .note-text a:hover {
+            text-decoration: underline;
         }
 
         /* Logs */
@@ -184,6 +197,19 @@
             opacity: 0.8;
             margin-top: 4px;
         }
+        .editable-name {
+            font-weight: bold;
+            border-bottom: 1px dashed rgba(255,255,255,0.4);
+            padding-bottom: 2px;
+            cursor: text;
+            display: inline-block;
+            min-width: 100px;
+            outline: none;
+        }
+        .editable-name:focus {
+            border-bottom: 1px solid white;
+            background: rgba(255,255,255,0.1);
+        }
     </style>
 </head>
 <body>
@@ -197,7 +223,7 @@
         <!-- Compact Table Grid for Space Saving -->
         <div class="settings-grid">
             <div class="grid-header">Stage</div>
-            <div class="grid-header">Time (m:s)</div>
+            <div class="grid-header">Time(Minutes:Seconds)</div>
             <div class="grid-header">Blink</div>
             <div class="grid-header">Sound</div>
 
@@ -233,10 +259,12 @@
         
         <div class="bottom-actions">
             <button id="resetBtn" onclick="resetTimer()">Reset</button>
+            <div class="note-text">(sound works on Chrome browser and not silent mode)</div>
+            <div class="note-text">for feedbacks email <a href="mailto:alexkurian@live.com">alexkurian@live.com</a></div>
         </div>
 
         <div id="logSection">
-            <div class="log-header-text">Timing Logs (xx minutes : xx seconds)</div>
+            <div class="log-header-text">Timing Logs</div>
             <div id="logTable"></div>
         </div>
     </div>
@@ -249,6 +277,7 @@
         let timerInterval = null;
         let logs = [];
         let speakerCount = 0;
+        let wakeLock = null; // Screen keep-awake feature
 
         // Audio Context for the buzzer
         let audioCtx = null;
@@ -293,6 +322,23 @@
             return `${hh}:${mm} ${ampm}`;
         }
 
+        // Keep Screen Awake Function
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {
+                console.log('Wake Lock Error:', err.message);
+            }
+        }
+        // Re-request wake lock when returning to the tab
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                requestWakeLock();
+            }
+        });
+
         // Web Audio API Buzzer Function
         function playBuzzer() {
             if (!audioCtx) {
@@ -314,6 +360,8 @@
         }
 
         function startTimer() {
+            requestWakeLock(); // Trigger keep screen awake
+
             if (!running && !isStopping) {
                 // Initialize audio context on first user interaction to bypass browser restrictions
                 if (!audioCtx) {
@@ -344,6 +392,9 @@
                 isStopping = true; // Lock timer state during the stop animation
                 clearInterval(timerInterval);
                 
+                // Remove background blinking immediately
+                document.body.className = ''; 
+
                 const endClockDate = new Date();
                 const elapsedSeconds = (Date.now() - startTime) / 1000;
                 const m = Math.floor(elapsedSeconds / 60);
@@ -353,9 +404,9 @@
                 const elapsedStrForLog = `${m.toString().padStart(2, '0')} minutes : ${s.toString().padStart(2, '0')} seconds`;
                 
                 let colorHex = '#BBBBBB';
-                if (document.body.classList.contains('stage-red') || document.body.classList.contains('blink-red')) colorHex = '#F44336';
-                else if (document.body.classList.contains('stage-orange') || document.body.classList.contains('blink-orange')) colorHex = '#FF9800';
-                else if (document.body.classList.contains('stage-green') || document.body.classList.contains('blink-green')) colorHex = '#4CAF50';
+                if (elapsedSeconds >= getSeconds('redMin', 'redSec')) colorHex = '#F44336';
+                else if (elapsedSeconds >= getSeconds('orangeMin', 'orangeSec')) colorHex = '#FF9800';
+                else if (elapsedSeconds >= getSeconds('greenMin', 'greenSec')) colorHex = '#4CAF50';
 
                 speakerCount++;
                 const timeFrame = `${formatClockTime(startClockDate)} - ${formatClockTime(endClockDate)}`;
@@ -369,20 +420,15 @@
                 
                 updateLogDisplay();
 
-                // 2-Second Delay -> Blink -> Reset Screen
+                // Blink numbers for 2 seconds -> Reset Screen
+                const display = document.getElementById('timerDisplay');
+                display.classList.add('text-blink'); // Start text blinking animation
+                
                 setTimeout(() => {
-                    const display = document.getElementById('timerDisplay');
-                    display.classList.add('text-blink'); // Start blinking animation
-                    
-                    setTimeout(() => {
-                        // After 1 second of blinking, reset
-                        display.innerText = '00:00';
-                        display.classList.remove('text-blink');
-                        document.body.className = ''; 
-                        isStopping = false; // Unlock timer
-                    }, 1000); 
-
-                }, 2000); // Wait 2 seconds before blinking
+                    display.innerText = '00:00';
+                    display.classList.remove('text-blink');
+                    isStopping = false; // Unlock timer
+                }, 2000); // 2 seconds
             }
         }
 
@@ -462,17 +508,22 @@
             }
         }
 
+        // Save edited name back to the array so it isn't overwritten on next timer update
+        function saveEditedName(index, element) {
+            logs[index].title = element.innerText;
+        }
+
         function updateLogDisplay() {
             const logContainer = document.getElementById('logTable');
             logContainer.innerHTML = '';
-            logs.forEach(log => {
+            logs.forEach((log, index) => {
                 const div = document.createElement('div');
                 div.className = 'log-entry';
                 div.style.color = log.color;
                 
                 div.innerHTML = `
                     <div>
-                        <strong>${log.title}</strong>
+                        <div class="editable-name" contenteditable="true" onblur="saveEditedName(${index}, this)" spellcheck="false">${log.title}</div>
                         <div class="log-details">${log.timeFrame}</div>
                     </div>
                     <div>${log.duration}</div>
