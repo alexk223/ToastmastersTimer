@@ -22,7 +22,7 @@
             transition: background-color 0.2s;
         }
         
-        /* Blinking Animations applied to the whole screen */
+        /* Blinking Animations applied to the whole screen and header */
         @keyframes blinkGreen {
             0%, 100% { background-color: #4CAF50; color: white; }
             50% { background-color: #212121; color: white; }
@@ -43,30 +43,35 @@
         }
         .text-blink { animation: textBlink 1s ease 2; }
 
-        /* Solid Stage Colors applied to the whole screen */
-        body.stage-green { background-color: #4CAF50 !important; color: white; }
-        body.stage-yellow { background-color: #FFC107 !important; color: black; }
-        body.stage-red { background-color: #F44336 !important; color: white; }
+        /* Solid Stage Colors applied to the whole screen and top section */
+        body.stage-green, body.stage-green #top-section { background-color: #4CAF50 !important; color: white; }
+        body.stage-yellow, body.stage-yellow #top-section { background-color: #FFC107 !important; color: black; }
+        body.stage-red, body.stage-red #top-section { background-color: #F44336 !important; color: white; }
 
-        /* Blinking Stage Colors applied to the whole screen */
-        body.blink-green { animation: blinkGreen 1s infinite; }
-        body.blink-yellow { animation: blinkYellow 1s infinite; }
-        body.blink-red { animation: blinkRed 1s infinite; }
+        /* Blinking Stage Colors applied to the whole screen and top section */
+        body.blink-green, body.blink-green #top-section { animation: blinkGreen 1s infinite; }
+        body.blink-yellow, body.blink-yellow #top-section { animation: blinkYellow 1s infinite; }
+        body.blink-red, body.blink-red #top-section { animation: blinkRed 1s infinite; }
 
-        /* Sticky Timer */
+        /* Sticky Timer Section */
         #top-section {
             position: sticky;
             top: 0;
-            background-color: transparent; /* Lets the body color show through */
+            background-color: #212121; 
             padding: 20px;
             z-index: 100;
             border-bottom: 2px solid rgba(255,255,255,0.1);
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px; 
+            transition: background-color 0.2s, color 0.2s;
         }
         h1 {
             font-size: 18px;
-            margin: 0 0 10px 0;
+            margin: 0;
             opacity: 0.8;
+            text-align: center;
         }
         #timerDisplay {
             font-size: 80px;
@@ -74,6 +79,19 @@
             font-variant-numeric: tabular-nums;
             margin: 0;
             transition: opacity 0.2s;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Working Timer Colon Blink Animation */
+        @keyframes blinkColon {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        #timerDisplay.is-running #colon {
+            animation: blinkColon 1s infinite;
         }
 
         /* Controls */
@@ -134,22 +152,41 @@
             margin: 0;
         }
         
+        /* 3D Buttons */
         .buttons {
             display: flex;
             gap: 15px;
+            width: 100%;
+            max-width: 500px; 
         }
         .buttons button {
             flex: 1; 
             padding: 15px;
             font-size: 20px;
-            border: 3px solid white; 
+            border: 2px solid white; 
             border-radius: 10px;
             cursor: pointer;
             color: white;
             font-weight: bold;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            user-select: none;
         }
-        #startBtn { background-color: #4CAF50; }
-        #stopBtn { background-color: #F44336; }
+        #startBtn { 
+            background-color: #4CAF50; 
+            box-shadow: 0 6px 0 #2E7D32, 0 8px 10px rgba(0,0,0,0.3);
+        }
+        #startBtn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #2E7D32, 0 4px 6px rgba(0,0,0,0.3);
+        }
+        #stopBtn { 
+            background-color: #F44336; 
+            box-shadow: 0 6px 0 #C62828, 0 8px 10px rgba(0,0,0,0.3);
+        }
+        #stopBtn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #C62828, 0 4px 6px rgba(0,0,0,0.3);
+        }
         
         .bottom-actions {
             display: flex;
@@ -209,11 +246,11 @@
         .log-table {
             width: 100%;
             border-collapse: collapse;
-            background-color: #212121; /* Keeps dark background regardless of screen color */
+            background-color: #212121; 
             border-radius: 8px;
-            overflow: hidden; /* Enables rounded corners on the table */
+            overflow: hidden; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            color: white; /* Ensures text stays readable */
+            color: white; 
         }
         .log-table th {
             background-color: rgba(255,255,255,0.1);
@@ -250,11 +287,16 @@
 
     <div id="top-section">
         <h1>Papatoetoe Toastmasters Timer</h1>
-        <div id="timerDisplay">00:00</div>
+        <div id="timerDisplay">
+            <span id="minutes">00</span><span id="colon">:</span><span id="seconds">00</span>
+        </div>
+        <div class="buttons">
+            <button id="startBtn" onclick="startTimer()">Start</button>
+            <button id="stopBtn" onclick="stopTimer()">Stop</button>
+        </div>
     </div>
 
     <div id="content">
-        <!-- Compact Table Grid for Space Saving -->
         <div class="settings-grid">
             <div class="grid-header">Stage</div>
             <div class="grid-header">Time(m:s)</div>
@@ -286,11 +328,6 @@
             <div><input type="checkbox" id="redSound"></div>
         </div>
 
-        <div class="buttons">
-            <button id="startBtn" onclick="startTimer()">Start</button>
-            <button id="stopBtn" onclick="stopTimer()">Stop</button>
-        </div>
-        
         <div class="bottom-actions">
             <div class="action-buttons-row">
                 <button id="resetBtn" onclick="resetTimer()">Reset</button>
@@ -413,6 +450,7 @@
                 lastRedBuzzerTime = 0;
                 
                 document.body.className = '';
+                document.getElementById('timerDisplay').classList.add('is-running');
                 timerInterval = setInterval(updateTimer, 100); 
 
                 speakerCount++;
@@ -434,6 +472,8 @@
                 clearInterval(timerInterval);
                 
                 document.body.className = ''; 
+                const display = document.getElementById('timerDisplay');
+                display.classList.remove('is-running');
 
                 const endClockDate = new Date();
                 const elapsedSeconds = (Date.now() - startTime) / 1000;
@@ -455,11 +495,11 @@
                 
                 updateLogDisplay();
 
-                const display = document.getElementById('timerDisplay');
                 display.classList.add('text-blink');
                 
                 setTimeout(() => {
-                    display.innerText = '00:00';
+                    document.getElementById('minutes').innerText = '00';
+                    document.getElementById('seconds').innerText = '00';
                     display.classList.remove('text-blink');
                     isStopping = false; 
                 }, 2000); 
@@ -474,9 +514,11 @@
                 isStopping = false;
                 clearInterval(timerInterval);
                 
+                document.getElementById('minutes').innerText = '00';
+                document.getElementById('seconds').innerText = '00';
+                
                 const display = document.getElementById('timerDisplay');
-                display.innerText = '00:00';
-                display.classList.remove('text-blink');
+                display.classList.remove('text-blink', 'is-running');
                 document.body.className = '';
                 
                 logs = [];
@@ -499,8 +541,8 @@
             const m = Math.floor(elapsed / 60);
             const s = Math.floor(elapsed % 60);
             
-            document.getElementById('timerDisplay').innerText = 
-                `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            document.getElementById('minutes').innerText = m.toString().padStart(2, '0');
+            document.getElementById('seconds').innerText = s.toString().padStart(2, '0');
 
             const green = getSeconds('greenMin', 'greenSec');
             const yellow = getSeconds('yellowMin', 'yellowSec');
@@ -640,7 +682,6 @@
 
             const finalY = doc.lastAutoTable.finalY || 30;
             doc.setFontSize(10);
-            // Updated footer text as requested
             doc.text("Prepared with https://alexk223.github.io/ToastmastersTimer/", 14, finalY + 15);
             doc.text("For feedbacks contact alexkurian@live.com", 14, finalY + 22);
 
