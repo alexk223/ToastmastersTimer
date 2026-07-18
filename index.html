@@ -23,7 +23,7 @@
             0%, 100% { background-color: #4CAF50; color: white; }
             50% { background-color: #212121; color: white; }
         }
-        @keyframes blinkOrange {
+        @keyframes blinkyellow {
             0%, 100% { background-color: #FF9800; color: black; }
             50% { background-color: #212121; color: white; }
         }
@@ -41,12 +41,12 @@
 
         /* Solid Stage Colors */
         body.stage-green { background-color: #4CAF50 !important; color: white; }
-        body.stage-orange { background-color: #FF9800 !important; color: black; }
+        body.stage-yellow { background-color: #FF9800 !important; color: black; }
         body.stage-red { background-color: #F44336 !important; color: white; }
 
         /* Blinking Stage Colors */
         body.blink-green { animation: blinkGreen 1s infinite; }
-        body.blink-orange { animation: blinkOrange 1s infinite; }
+        body.blink-yellow { animation: blinkyellow 1s infinite; }
         body.blink-red { animation: blinkRed 1s infinite; }
 
         /* Sticky Timer */
@@ -235,13 +235,13 @@
             <div><input type="checkbox" id="greenBlink"></div>
             <div><input type="checkbox" id="greenSound"></div>
 
-            <!-- Orange Row -->
-            <div class="stage-label" style="color: #FF9800;">Orange</div>
+            <!-- yellow Row -->
+            <div class="stage-label" style="color: #FF9800;">yellow</div>
             <div class="time-inputs">
-                <select id="orangeMin"></select>:<select id="orangeSec"></select>
+                <select id="yellowMin"></select>:<select id="yellowSec"></select>
             </div>
-            <div><input type="checkbox" id="orangeBlink"></div>
-            <div><input type="checkbox" id="orangeSound"></div>
+            <div><input type="checkbox" id="yellowBlink"></div>
+            <div><input type="checkbox" id="yellowSound"></div>
 
             <!-- Red Row -->
             <div class="stage-label" style="color: #F44336;">Red</div>
@@ -284,7 +284,7 @@
         
         // Sound Trigger States
         let greenSoundPlayed = false;
-        let orangeSoundPlayed = false;
+        let yellowSoundPlayed = false;
         let redSoundPlayed = false;
         let lastRedBuzzerTime = 0;
 
@@ -303,7 +303,7 @@
             });
             // Default Values
             document.getElementById('greenMin').value = "1";
-            document.getElementById('orangeMin').value = "5";
+            document.getElementById('yellowMin').value = "5";
             document.getElementById('redMin').value = "7";
         }
         setupPickers();
@@ -377,7 +377,7 @@
                 
                 // Reset sound states for the new speaker
                 greenSoundPlayed = false;
-                orangeSoundPlayed = false;
+                yellowSoundPlayed = false;
                 redSoundPlayed = false;
                 lastRedBuzzerTime = 0;
                 
@@ -405,7 +405,7 @@
                 
                 let colorHex = '#BBBBBB';
                 if (elapsedSeconds >= getSeconds('redMin', 'redSec')) colorHex = '#F44336';
-                else if (elapsedSeconds >= getSeconds('orangeMin', 'orangeSec')) colorHex = '#FF9800';
+                else if (elapsedSeconds >= getSeconds('yellowMin', 'yellowSec')) colorHex = '#FF9800';
                 else if (elapsedSeconds >= getSeconds('greenMin', 'greenSec')) colorHex = '#4CAF50';
 
                 speakerCount++;
@@ -453,8 +453,8 @@
                 // Reset pickers to default
                 document.getElementById('greenMin').value = "1";
                 document.getElementById('greenSec').value = "0";
-                document.getElementById('orangeMin').value = "5";
-                document.getElementById('orangeSec').value = "0";
+                document.getElementById('yellowMin').value = "5";
+                document.getElementById('yellowSec').value = "0";
                 document.getElementById('redMin').value = "7";
                 document.getElementById('redSec').value = "0";
                 
@@ -472,7 +472,7 @@
                 `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 
             const green = getSeconds('greenMin', 'greenSec');
-            const orange = getSeconds('orangeMin', 'orangeSec');
+            const yellow = getSeconds('yellowMin', 'yellowSec');
             const red = getSeconds('redMin', 'redSec');
 
             document.body.className = '';
@@ -490,12 +490,12 @@
                     lastRedBuzzerTime = Math.floor(elapsed);
                 }
                 
-            } else if (elapsed >= orange) {
-                document.body.classList.add(document.getElementById('orangeBlink').checked ? 'blink-orange' : 'stage-orange');
+            } else if (elapsed >= yellow) {
+                document.body.classList.add(document.getElementById('yellowBlink').checked ? 'blink-yellow' : 'stage-yellow');
                 
-                if (!orangeSoundPlayed) {
-                    if(document.getElementById('orangeSound').checked) playBuzzer();
-                    orangeSoundPlayed = true;
+                if (!yellowSoundPlayed) {
+                    if(document.getElementById('yellowSound').checked) playBuzzer();
+                    yellowSoundPlayed = true;
                 }
                 
             } else if (elapsed >= green) {
