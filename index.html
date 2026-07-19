@@ -22,18 +22,18 @@
             transition: background-color 0.2s;
         }
         
-        /* Blinking Animations applied to the whole screen and header */
-        @keyframes blinkGreen {
-            0%, 100% { background-color: #4CAF50; color: white; }
-            50% { background-color: #212121; color: white; }
+        /* Breathing Animations applied to the whole screen and header */
+        @keyframes breatheGreen {
+            0%, 100% { background-color: #212121; color: white; }
+            50% { background-color: #4CAF50; color: white; }
         }
-        @keyframes blinkYellow {
-            0%, 100% { background-color: #FFC107; color: black; }
-            50% { background-color: #212121; color: white; }
+        @keyframes breatheYellow {
+            0%, 100% { background-color: #212121; color: white; }
+            50% { background-color: #FFC107; color: black; }
         }
-        @keyframes blinkRed {
-            0%, 100% { background-color: #F44336; color: white; }
-            50% { background-color: #212121; color: white; }
+        @keyframes breatheRed {
+            0%, 100% { background-color: #212121; color: white; }
+            50% { background-color: #F44336; color: white; }
         }
         
         /* Text Blinking Animation for Stop Action (2 Seconds) */
@@ -48,10 +48,10 @@
         body.stage-yellow, body.stage-yellow #top-section { background-color: #FFC107 !important; color: black; }
         body.stage-red, body.stage-red #top-section { background-color: #F44336 !important; color: white; }
 
-        /* Blinking Stage Colors applied to the whole screen and top section */
-        body.blink-green, body.blink-green #top-section { animation: blinkGreen 1s infinite; }
-        body.blink-yellow, body.blink-yellow #top-section { animation: blinkYellow 1s infinite; }
-        body.blink-red, body.blink-red #top-section { animation: blinkRed 1s infinite; }
+        /* Breathing Stage Colors applied to the whole screen and top section */
+        body.blink-green, body.blink-green #top-section { animation: breatheGreen 3s ease-in-out infinite; }
+        body.blink-yellow, body.blink-yellow #top-section { animation: breatheYellow 3s ease-in-out infinite; }
+        body.blink-red, body.blink-red #top-section { animation: breatheRed 3s ease-in-out infinite; }
 
         /* Sticky Timer Section */
         #top-section {
@@ -67,6 +67,7 @@
             gap: 15px; 
             transition: background-color 0.2s, color 0.2s;
         }
+
         h1 {
             font-size: 18px;
             margin: 0;
@@ -74,11 +75,11 @@
             text-align: center;
         }
         #timerDisplay {
-            font-size: 80px;
+            font-size: 80px; /* Base font size */
             font-weight: bold;
             font-variant-numeric: tabular-nums;
             margin: 0;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, font-size 0.2s ease;
             text-align: center;
             display: flex;
             align-items: center;
@@ -162,7 +163,7 @@
         .buttons button {
             flex: 1; 
             padding: 15px;
-            font-size: 20px;
+            font-size: 18px;
             border: 2px solid white; 
             border-radius: 10px;
             cursor: pointer;
@@ -187,6 +188,42 @@
             transform: translateY(4px);
             box-shadow: 0 2px 0 #C62828, 0 4px 6px rgba(0,0,0,0.3);
         }
+
+        /* Zoom Controls */
+        .zoom-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 5px;
+        }
+        .zoom-header {
+            font-size: 14px;
+            opacity: 0.8;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        .zoom-buttons {
+            display: flex;
+            gap: 15px;
+        }
+        .zoom-buttons button {
+            background-color: #555;
+            border: 2px solid #777;
+            color: white;
+            border-radius: 8px;
+            padding: 5px 20px;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #333;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            user-select: none;
+        }
+        .zoom-buttons button:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #333;
+        }
         
         .bottom-actions {
             display: flex;
@@ -199,8 +236,8 @@
             display: flex;
             gap: 10px;
         }
-        #resetBtn { 
-            background-color: #616161; 
+        #testSoundBtn { 
+            background-color: #9C27B0; 
             padding: 10px 20px;
             font-size: 16px;
             border: none;
@@ -294,6 +331,14 @@
             <button id="startBtn" onclick="startTimer()">Start</button>
             <button id="stopBtn" onclick="stopTimer()">Stop</button>
         </div>
+        <!-- Zoom Controls -->
+        <div class="zoom-container">
+            <div class="zoom-header">Zoom Clock</div>
+            <div class="zoom-buttons">
+                <button onclick="changeZoom(-1)">-</button>
+                <button onclick="changeZoom(1)">+</button>
+            </div>
+        </div>
     </div>
 
     <div id="content">
@@ -330,7 +375,7 @@
 
         <div class="bottom-actions">
             <div class="action-buttons-row">
-                <button id="resetBtn" onclick="resetTimer()">Reset Logs</button>
+                <button id="testSoundBtn" onclick="testSoundManually()">Test Sound</button>
                 <button id="exportBtn" onclick="exportPDF()">Export Report as PDF</button>
             </div>
             <div class="note-text">Speaker Name in the Timing Logs is editable</div>
@@ -354,8 +399,9 @@
         let logs = [];
         let speakerCount = 0;
         let wakeLock = null;
+        let currentZoom = 80; // Default font size for the clock
 
-        // Audio Context for the buzzer
+        // Audio Context for the beautiful bell sound
         let audioCtx = null;
         
         // Sound Trigger States
@@ -412,36 +458,76 @@
             }
         });
 
-        function playBuzzer() {
+        // Change zoom size of the clock
+        function changeZoom(step) {
+            currentZoom += step * 15; // Increase/Decrease by 15px
+            if (currentZoom < 40) currentZoom = 40; // minimum limit
+            if (currentZoom > 250) currentZoom = 250; // maximum limit
+            document.getElementById('timerDisplay').style.fontSize = currentZoom + 'px';
+        }
+
+        // Core unlocking mechanism: guarantees audio works on mobile and background tabs
+        function unlockAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
             
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
+            // Play a completely silent 1ms sound to "unlock" the audio engine immediately on user click
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            gain.gain.value = 0; // Silent
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(0);
+            osc.stop(audioCtx.currentTime + 0.001);
+        }
+
+        // Test Sound Button Hook
+        function testSoundManually() {
+            unlockAudio();
+            playBellSound();
+        }
+
+        // Synthesize a beautiful bell ring sound using AudioContext
+        function playBellSound() {
+            if (!audioCtx) return; // Should be initialized via unlockAudio
             
-            oscillator.type = 'square';
-            oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); 
-            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); 
+            const t = audioCtx.currentTime;
             
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            
-            oscillator.start();
-            setTimeout(() => oscillator.stop(), 500);
+            // Frequencies that create a pleasant chime/bell resonance
+            [880, 1760, 2640].forEach((freq, index) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, t);
+                
+                // Volume envelope for bell effect
+                gain.gain.setValueAtTime(0, t);
+                // Quick attack
+                gain.gain.linearRampToValueAtTime(0.2 / (index + 1), t + 0.02);
+                // Long decaying tail
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 3);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start(t);
+                osc.stop(t + 3);
+            });
         }
 
         function startTimer() {
-            requestWakeLock(); 
-
             if (!running && !isStopping) {
-                if (!audioCtx) {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
                 
+                // 1. Instantly do audio unlocking
+                unlockAudio();
+                requestWakeLock(); 
+                
+                // 2. Start counting time immediately
                 running = true;
                 startTime = Date.now();
                 startClockDate = new Date();
@@ -455,20 +541,43 @@
                 document.getElementById('timerDisplay').classList.add('is-running');
                 timerInterval = setInterval(updateTimer, 100); 
 
+                // Capture targeted settings
+                const gMin = document.getElementById('greenMin').value.padStart(2, '0');
+                const gSec = document.getElementById('greenSec').value.padStart(2, '0');
+                const yMin = document.getElementById('yellowMin').value.padStart(2, '0');
+                const ySec = document.getElementById('yellowSec').value.padStart(2, '0');
+                const rMin = document.getElementById('redMin').value.padStart(2, '0');
+                const rSec = document.getElementById('redSec').value.padStart(2, '0');
+                const targetTimesStr = `G: ${gMin}:${gSec}, Y: ${yMin}:${ySec}, R: ${rMin}:${rSec}`;
+
+                // 3. Create initial log entry
                 speakerCount++;
                 logs.unshift({ 
                     title: `Speaker ${speakerCount}`, 
                     startTime: startClockDate,
                     endTime: null,
                     duration: '-- minutes : -- seconds',
+                    targetTimes: targetTimesStr,
                     color: '#BBBBBB' 
                 });
                 updateLogDisplay();
+
+                // 4. Wait 2 seconds, then prompt for the name.
+                setTimeout(() => {
+                    if (running) {
+                        let namePrompt = prompt("Enter Speaker Name:", logs[0].title);
+                        if (namePrompt !== null && namePrompt.trim() !== '') {
+                            logs[0].title = namePrompt.trim();
+                            updateLogDisplay();
+                        }
+                    }
+                }, 2000);
             }
         }
 
         function stopTimer() {
             if (running && !isStopping) {
+                
                 running = false;
                 isStopping = true; 
                 clearInterval(timerInterval);
@@ -508,36 +617,6 @@
             }
         }
 
-        function resetTimer() {
-            const userConfirmed = confirm("Make sure to write down or export the timing log before resetting. Proceed with reset? Yes or No");
-            
-            if (userConfirmed) {
-                running = false;
-                isStopping = false;
-                clearInterval(timerInterval);
-                
-                document.getElementById('minutes').innerText = '00';
-                document.getElementById('seconds').innerText = '00';
-                
-                const display = document.getElementById('timerDisplay');
-                display.classList.remove('text-blink', 'is-running');
-                document.body.className = '';
-                
-                logs = [];
-                speakerCount = 0;
-                updateLogDisplay();
-                
-                document.getElementById('greenMin').value = "1";
-                document.getElementById('greenSec').value = "0";
-                document.getElementById('yellowMin').value = "5";
-                document.getElementById('yellowSec').value = "0";
-                document.getElementById('redMin').value = "7";
-                document.getElementById('redSec').value = "0";
-                
-                document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-            }
-        }
-
         function updateTimer() {
             const elapsed = (Date.now() - startTime) / 1000;
             const m = Math.floor(elapsed / 60);
@@ -556,12 +635,12 @@
                 document.body.classList.add(document.getElementById('redBlink').checked ? 'blink-red' : 'stage-red');
                 
                 if (!redSoundPlayed) {
-                    if(document.getElementById('redSound').checked) playBuzzer();
+                    if(document.getElementById('redSound').checked) playBellSound();
                     redSoundPlayed = true;
                     lastRedBuzzerTime = Math.floor(elapsed);
                 } 
                 else if (Math.floor(elapsed) - lastRedBuzzerTime >= 10) {
-                    if(document.getElementById('redSound').checked) playBuzzer();
+                    if(document.getElementById('redSound').checked) playBellSound();
                     lastRedBuzzerTime = Math.floor(elapsed);
                 }
                 
@@ -569,7 +648,7 @@
                 document.body.classList.add(document.getElementById('yellowBlink').checked ? 'blink-yellow' : 'stage-yellow');
                 
                 if (!yellowSoundPlayed) {
-                    if(document.getElementById('yellowSound').checked) playBuzzer();
+                    if(document.getElementById('yellowSound').checked) playBellSound();
                     yellowSoundPlayed = true;
                 }
                 
@@ -577,7 +656,7 @@
                 document.body.classList.add(document.getElementById('greenBlink').checked ? 'blink-green' : 'stage-green');
                 
                 if (!greenSoundPlayed) {
-                    if(document.getElementById('greenSound').checked) playBuzzer();
+                    if(document.getElementById('greenSound').checked) playBellSound();
                     greenSoundPlayed = true;
                 }
             }
@@ -654,6 +733,7 @@
                 return [
                     index + 1,
                     log.title,
+                    log.targetTimes || '--', 
                     timeFrame,
                     log.duration
                 ];
@@ -661,10 +741,11 @@
 
             doc.autoTable({
                 startY: 30,
-                head: [['', 'Speaker Name', 'Time', 'Duration']],
+                head: [['', 'Speaker Name', 'Target (G/Y/R)', 'Actual Time', 'Duration']],
                 body: tableData,
                 theme: 'striped',
-                headStyles: { fillColor: [76, 175, 80] }, 
+                // Modified to have no background color (white background, black text)
+                headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0.1 }, 
                 didParseCell: function(data) {
                     if (data.section === 'body') {
                         const originalLog = [...logs].reverse()[data.row.index];
