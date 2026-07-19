@@ -36,12 +36,12 @@
             50% { background-color: #F44336; color: white; }
         }
         
-        /* Text Blinking Animation for Stop Action (2 Seconds) */
+        /* Text Blinking Animation for Stop Action (4 flashes over 2 seconds) */
         @keyframes textBlink {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
+            50% { opacity: 0.2; }
         }
-        .text-blink { animation: textBlink 1s ease 2; }
+        .text-blink { animation: textBlink 0.5s ease 4; }
 
         /* Solid Stage Colors applied to the whole screen and top section */
         body.stage-green, body.stage-green #top-section { background-color: #4CAF50 !important; color: white; }
@@ -189,38 +189,32 @@
             box-shadow: 0 2px 0 #C62828, 0 4px 6px rgba(0,0,0,0.3);
         }
 
-        /* Zoom Controls */
+        /* Zoom Controls (Single Line) */
         .zoom-container {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            justify-content: center;
             align-items: center;
+            gap: 10px;
             margin-top: 5px;
         }
-        .zoom-header {
-            font-size: 14px;
-            opacity: 0.8;
-            font-weight: bold;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-        }
-        .zoom-buttons {
-            display: flex;
-            gap: 15px;
-        }
-        .zoom-buttons button {
+        .zoom-btn, .zoom-reset-btn {
             background-color: #555;
             border: 2px solid #777;
             color: white;
             border-radius: 8px;
-            padding: 5px 20px;
-            font-size: 22px;
+            padding: 8px 15px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 4px 0 #333;
             transition: transform 0.1s ease, box-shadow 0.1s ease;
             user-select: none;
         }
-        .zoom-buttons button:active {
+        .zoom-btn {
+            font-size: 16px; 
+        }
+        .zoom-btn:active, .zoom-reset-btn:active {
             transform: translateY(4px);
             box-shadow: 0 0 0 #333;
         }
@@ -231,13 +225,15 @@
             align-items: flex-start;
             margin-top: 10px;
             gap: 8px;
+            width: 100%;
         }
         .action-buttons-row {
             display: flex;
             gap: 10px;
+            width: 100%;
         }
-        #testSoundBtn { 
-            background-color: #9C27B0; 
+        #testSoundBtn, #exportBtn { 
+            flex: 1; 
             padding: 10px 20px;
             font-size: 16px;
             border: none;
@@ -245,17 +241,11 @@
             cursor: pointer;
             color: white;
             font-weight: bold;
+            text-align: center;
         }
-        #exportBtn {
-            background-color: #2196F3; 
-            padding: 10px 20px;
-            font-size: 16px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            color: white;
-            font-weight: bold;
-        }
+        #testSoundBtn { background-color: #9C27B0; }
+        #exportBtn { background-color: #2196F3; }
+
         .note-text {
             font-size: 12px;
             opacity: 0.8;
@@ -331,13 +321,11 @@
             <button id="startBtn" onclick="startTimer()">Start</button>
             <button id="stopBtn" onclick="stopTimer()">Stop</button>
         </div>
-        <!-- Zoom Controls -->
+        <!-- Zoom Controls (Single Line) -->
         <div class="zoom-container">
-            <div class="zoom-header">Zoom Clock</div>
-            <div class="zoom-buttons">
-                <button onclick="changeZoom(-1)">-</button>
-                <button onclick="changeZoom(1)">+</button>
-            </div>
+            <button class="zoom-btn" onclick="changeZoom(-1)">-</button>
+            <button class="zoom-btn" onclick="changeZoom(1)">+</button>
+            <button class="zoom-reset-btn" onclick="resetZoom()">Reset Size</button>
         </div>
     </div>
 
@@ -376,7 +364,7 @@
         <div class="bottom-actions">
             <div class="action-buttons-row">
                 <button id="testSoundBtn" onclick="testSoundManually()">Test Sound</button>
-                <button id="exportBtn" onclick="exportPDF()">Export Report as PDF</button>
+                <button id="exportBtn" onclick="exportPDF()">Export Report</button>
             </div>
             <div class="note-text">Speaker Name in the Timing Logs is editable</div>
             <div class="note-text">(sound does not work on silent mode)</div>
@@ -466,6 +454,12 @@
             document.getElementById('timerDisplay').style.fontSize = currentZoom + 'px';
         }
 
+        // Reset zoom to default 80px
+        function resetZoom() {
+            currentZoom = 80;
+            document.getElementById('timerDisplay').style.fontSize = currentZoom + 'px';
+        }
+
         // Core unlocking mechanism: guarantees audio works on mobile and background tabs
         function unlockAudio() {
             if (!audioCtx) {
@@ -493,11 +487,10 @@
 
         // Synthesize a beautiful bell ring sound using AudioContext
         function playBellSound() {
-            if (!audioCtx) return; // Should be initialized via unlockAudio
+            if (!audioCtx) return; 
             
             const t = audioCtx.currentTime;
             
-            // Frequencies that create a pleasant chime/bell resonance
             [880, 1760, 2640].forEach((freq, index) => {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
@@ -505,11 +498,8 @@
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(freq, t);
                 
-                // Volume envelope for bell effect
                 gain.gain.setValueAtTime(0, t);
-                // Quick attack
                 gain.gain.linearRampToValueAtTime(0.2 / (index + 1), t + 0.02);
-                // Long decaying tail
                 gain.gain.exponentialRampToValueAtTime(0.001, t + 3);
                 
                 osc.connect(gain);
@@ -523,11 +513,9 @@
         function startTimer() {
             if (!running && !isStopping) {
                 
-                // 1. Instantly do audio unlocking
                 unlockAudio();
                 requestWakeLock(); 
                 
-                // 2. Start counting time immediately
                 running = true;
                 startTime = Date.now();
                 startClockDate = new Date();
@@ -541,7 +529,6 @@
                 document.getElementById('timerDisplay').classList.add('is-running');
                 timerInterval = setInterval(updateTimer, 100); 
 
-                // Capture targeted settings
                 const gMin = document.getElementById('greenMin').value.padStart(2, '0');
                 const gSec = document.getElementById('greenSec').value.padStart(2, '0');
                 const yMin = document.getElementById('yellowMin').value.padStart(2, '0');
@@ -550,9 +537,10 @@
                 const rSec = document.getElementById('redSec').value.padStart(2, '0');
                 const targetTimesStr = `G: ${gMin}:${gSec}, Y: ${yMin}:${ySec}, R: ${rMin}:${rSec}`;
 
-                // 3. Create initial log entry
+                // Create initial log entry (including sequential speaker number)
                 speakerCount++;
                 logs.unshift({ 
+                    number: speakerCount,
                     title: `Speaker ${speakerCount}`, 
                     startTime: startClockDate,
                     endTime: null,
@@ -562,7 +550,6 @@
                 });
                 updateLogDisplay();
 
-                // 4. Wait 2 seconds, then prompt for the name.
                 setTimeout(() => {
                     if (running) {
                         let namePrompt = prompt("Enter Speaker Name:", logs[0].title);
@@ -598,10 +585,20 @@
                 else if (elapsedSeconds >= getSeconds('yellowMin', 'yellowSec')) colorHex = '#FFC107';
                 else if (elapsedSeconds >= getSeconds('greenMin', 'greenSec')) colorHex = '#4CAF50';
 
+                // Capture Final Targeted Times at the moment of stopping
+                const gMinStop = document.getElementById('greenMin').value.padStart(2, '0');
+                const gSecStop = document.getElementById('greenSec').value.padStart(2, '0');
+                const yMinStop = document.getElementById('yellowMin').value.padStart(2, '0');
+                const ySecStop = document.getElementById('yellowSec').value.padStart(2, '0');
+                const rMinStop = document.getElementById('redMin').value.padStart(2, '0');
+                const rSecStop = document.getElementById('redSec').value.padStart(2, '0');
+                const finalTargetTimesStr = `G: ${gMinStop}:${gSecStop}, Y: ${yMinStop}:${ySecStop}, R: ${rMinStop}:${rSecStop}`;
+
                 if (logs.length > 0) {
                     logs[0].endTime = endClockDate;
                     logs[0].duration = elapsedStrForLog;
                     logs[0].color = colorHex;
+                    logs[0].targetTimes = finalTargetTimesStr; 
                 }
                 
                 updateLogDisplay();
@@ -678,6 +675,7 @@
                 <table class="log-table">
                     <thead>
                         <tr>
+                            <th style="width: 40px;">#</th>
                             <th>Speaker Name</th>
                             <th>Time (Start-Finish)</th>
                             <th>Duration</th>
@@ -693,6 +691,7 @@
 
                 tableHTML += `
                     <tr style="color: ${log.color};">
+                        <td style="font-weight: bold; opacity: 0.8;">${log.number}</td>
                         <td>
                             <div class="editable-name" contenteditable="true" onblur="saveEditedName(${index}, this)" spellcheck="false">${log.title}</div>
                         </td>
@@ -723,15 +722,15 @@
             const dateStr = today.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
             
             doc.setFontSize(16);
-            doc.text(`Timing Logs for meeting of ${dateStr}`, 14, 20);
+            doc.text(`Timing Logs for Meeting Dated ${dateStr}`, 14, 20);
             
-            const tableData = [...logs].reverse().map((log, index) => {
+            const tableData = [...logs].reverse().map((log) => {
                 const timeFrame = log.endTime 
                     ? `${formatClockTime(log.startTime)} - ${formatClockTime(log.endTime)}` 
                     : `${formatClockTime(log.startTime)} - In Progress`;
                 
                 return [
-                    index + 1,
+                    log.number,
                     log.title,
                     log.targetTimes || '--', 
                     timeFrame,
@@ -741,10 +740,9 @@
 
             doc.autoTable({
                 startY: 30,
-                head: [['', 'Speaker Name', 'Target (G/Y/R)', 'Actual Time', 'Duration']],
+                head: [['#', 'Speaker Name', 'Target (G/Y/R)', 'Actual Time', 'Duration']],
                 body: tableData,
                 theme: 'striped',
-                // Modified to have no background color (white background, black text)
                 headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0.1 }, 
                 didParseCell: function(data) {
                     if (data.section === 'body') {
@@ -775,6 +773,16 @@
             
             window.location.href = `mailto:?subject=${subject}&body=${body}`;
         }
+
+        // Prevent accidental page refresh/close to avoid data loss
+        window.addEventListener('beforeunload', function (e) {
+            if (logs.length > 0) {
+                const warningMessage = "Make sure to note down timing logs in paper before refreshing this page. Do you want to proceed to refresh/rest log data?";
+                e.preventDefault(); 
+                e.returnValue = warningMessage; 
+                return warningMessage; 
+            }
+        });
     </script>
 </body>
 </html>
