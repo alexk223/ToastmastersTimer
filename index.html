@@ -231,8 +231,9 @@
             display: flex;
             gap: 10px;
             width: 100%;
+            flex-wrap: wrap;
         }
-        #testSoundBtn, #exportBtn { 
+        #testSoundBtn, #exportBtn, #deleteModeBtn { 
             flex: 1; 
             padding: 10px 20px;
             font-size: 16px;
@@ -242,9 +243,22 @@
             color: white;
             font-weight: bold;
             text-align: center;
+            min-width: 120px;
         }
         #testSoundBtn { background-color: #9C27B0; }
         #exportBtn { background-color: #2196F3; }
+        #deleteModeBtn { background-color: #E91E63; }
+        
+        .delete-btn {
+            background-color: #F44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .delete-btn:hover { background-color: #D32F2F; }
 
         .note-text {
             font-size: 12px;
@@ -365,9 +379,10 @@
             <div class="action-buttons-row">
                 <button id="testSoundBtn" onclick="testSoundManually()">Test Sound</button>
                 <button id="exportBtn" onclick="exportPDF()">Export Report</button>
+                <button id="deleteModeBtn" onclick="toggleDeleteMode()">Delete Speaker</button>
             </div>
             <div class="note-text">Speaker Name in the Timing Logs is editable</div>
-            <div class="note-text">(sound does not work on silent mode)</div>
+            <div class="note-text">(sound will not work on silent mode, test sound before meeting)</div>
             <div class="note-text">(Make sure to Note down timing in a paper as well. Accidental refresh of this page causes loss of data)</div>
             <div class="note-text">for feedbacks click here <a href="mailto:alexkurian@live.com">Email</a></div>
         </div>
@@ -388,6 +403,8 @@
         let speakerCount = 0;
         let wakeLock = null;
         let currentZoom = 80; // Default font size for the clock
+        
+        let isDeleteMode = false;
 
         // Audio Context for the beautiful bell sound
         let audioCtx = null;
@@ -446,74 +463,79 @@
             }
         });
 
-        // Change zoom size of the clock
         function changeZoom(step) {
-            currentZoom += step * 15; // Increase/Decrease by 15px
-            if (currentZoom < 40) currentZoom = 40; // minimum limit
-            if (currentZoom > 250) currentZoom = 250; // maximum limit
+            currentZoom += step * 15;
+            if (currentZoom < 40) currentZoom = 40; 
+            if (currentZoom > 250) currentZoom = 250; 
             document.getElementById('timerDisplay').style.fontSize = currentZoom + 'px';
         }
 
-        // Reset zoom to default 80px
         function resetZoom() {
             currentZoom = 80;
             document.getElementById('timerDisplay').style.fontSize = currentZoom + 'px';
         }
 
-        // Core unlocking mechanism: guarantees audio works on mobile and background tabs
-        function unlockAudio() {
+        // Reliable initialization to comply with strict mobile browser policies
+        function initAudio() {
             if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
             }
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
-            
-            // Play a completely silent 1ms sound to "unlock" the audio engine immediately on user click
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            gain.gain.value = 0; // Silent
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(0);
-            osc.stop(audioCtx.currentTime + 0.001);
         }
+
+        // Bind early unlock to the first user interaction anywhere on the screen
+        document.body.addEventListener('click', initAudio, { once: true });
+        document.body.addEventListener('touchstart', initAudio, { once: true });
 
         // Test Sound Button Hook
         function testSoundManually() {
-            unlockAudio();
-            playBellSound();
+            initAudio();
+            playBeep(1);
         }
 
-        // Synthesize a beautiful bell ring sound using AudioContext
-        function playBellSound() {
-            if (!audioCtx) return; 
+        // Stabilized synthesized distinct beeps (1 for Green, 2 for Yellow, 3 for Red)
+        function playBeep(times) {
+            if (!audioCtx) initAudio();
             
-            const t = audioCtx.currentTime;
-            
-            [880, 1760, 2640].forEach((freq, index) => {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            // Schedule multiple distinct beeps securely in the audio context 
+            for (let i = 0; i < times; i++) {
+                // Space beeps exactly 400ms apart
+                const t = audioCtx.currentTime + (i * 0.4);
+                
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, t);
+                osc.type = 'triangle'; // Stable, piercing wave for notifications
+                osc.frequency.setValueAtTime(880, t); // Note A5
                 
                 gain.gain.setValueAtTime(0, t);
-                gain.gain.linearRampToValueAtTime(0.2 / (index + 1), t + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.001, t + 3);
+                gain.gain.linearRampToValueAtTime(1, t + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
                 
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 
                 osc.start(t);
-                osc.stop(t + 3);
-            });
+                osc.stop(t + 0.3);
+
+                osc.onended = () => {
+                    osc.disconnect();
+                    gain.disconnect();
+                };
+            }
         }
 
         function startTimer() {
             if (!running && !isStopping) {
                 
-                unlockAudio();
+                initAudio();
                 requestWakeLock(); 
                 
                 running = true;
@@ -537,7 +559,6 @@
                 const rSec = document.getElementById('redSec').value.padStart(2, '0');
                 const targetTimesStr = `G: ${gMin}:${gSec}, Y: ${yMin}:${ySec}, R: ${rMin}:${rSec}`;
 
-                // Create initial log entry (including sequential speaker number)
                 speakerCount++;
                 logs.unshift({ 
                     number: speakerCount,
@@ -585,7 +606,6 @@
                 else if (elapsedSeconds >= getSeconds('yellowMin', 'yellowSec')) colorHex = '#FFC107';
                 else if (elapsedSeconds >= getSeconds('greenMin', 'greenSec')) colorHex = '#4CAF50';
 
-                // Capture Final Targeted Times at the moment of stopping
                 const gMinStop = document.getElementById('greenMin').value.padStart(2, '0');
                 const gSecStop = document.getElementById('greenSec').value.padStart(2, '0');
                 const yMinStop = document.getElementById('yellowMin').value.padStart(2, '0');
@@ -632,12 +652,12 @@
                 document.body.classList.add(document.getElementById('redBlink').checked ? 'blink-red' : 'stage-red');
                 
                 if (!redSoundPlayed) {
-                    if(document.getElementById('redSound').checked) playBellSound();
+                    if(document.getElementById('redSound').checked) playBeep(3);
                     redSoundPlayed = true;
                     lastRedBuzzerTime = Math.floor(elapsed);
                 } 
                 else if (Math.floor(elapsed) - lastRedBuzzerTime >= 10) {
-                    if(document.getElementById('redSound').checked) playBellSound();
+                    if(document.getElementById('redSound').checked) playBeep(3);
                     lastRedBuzzerTime = Math.floor(elapsed);
                 }
                 
@@ -645,7 +665,7 @@
                 document.body.classList.add(document.getElementById('yellowBlink').checked ? 'blink-yellow' : 'stage-yellow');
                 
                 if (!yellowSoundPlayed) {
-                    if(document.getElementById('yellowSound').checked) playBellSound();
+                    if(document.getElementById('yellowSound').checked) playBeep(2);
                     yellowSoundPlayed = true;
                 }
                 
@@ -653,7 +673,7 @@
                 document.body.classList.add(document.getElementById('greenBlink').checked ? 'blink-green' : 'stage-green');
                 
                 if (!greenSoundPlayed) {
-                    if(document.getElementById('greenSound').checked) playBellSound();
+                    if(document.getElementById('greenSound').checked) playBeep(1);
                     greenSoundPlayed = true;
                 }
             }
@@ -661,6 +681,20 @@
 
         function saveEditedName(index, element) {
             logs[index].title = element.innerText;
+        }
+        
+        function toggleDeleteMode() {
+            isDeleteMode = !isDeleteMode;
+            document.getElementById('deleteModeBtn').innerText = isDeleteMode ? "Done Deleting" : "Delete Speaker";
+            updateLogDisplay();
+        }
+        
+        function confirmDelete(index) {
+            const speakerName = logs[index].title;
+            if (confirm(`Are you sure you want to delete the log for "${speakerName}"?`)) {
+                logs.splice(index, 1);
+                updateLogDisplay();
+            }
         }
 
         function updateLogDisplay() {
@@ -679,6 +713,7 @@
                             <th>Speaker Name</th>
                             <th>Time (Start-Finish)</th>
                             <th>Duration</th>
+                            ${isDeleteMode ? '<th style="width: 50px;">Del</th>' : ''}
                         </tr>
                     </thead>
                     <tbody>
@@ -697,6 +732,7 @@
                         </td>
                         <td style="opacity: 0.9; font-size: 14px;">${timeFrame}</td>
                         <td>${log.duration}</td>
+                        ${isDeleteMode ? `<td><button class="delete-btn" onclick="confirmDelete(${index})">X</button></td>` : ''}
                     </tr>
                 `;
             });
@@ -774,7 +810,6 @@
             window.location.href = `mailto:?subject=${subject}&body=${body}`;
         }
 
-        // Prevent accidental page refresh/close to avoid data loss
         window.addEventListener('beforeunload', function (e) {
             if (logs.length > 0) {
                 const warningMessage = "Make sure to note down timing logs in paper before refreshing this page. Do you want to proceed to refresh/rest log data?";
