@@ -22,7 +22,6 @@
             transition: background-color 0.2s;
         }
 
-        /* Breathing Animations applied to the whole screen and header */
         @keyframes breatheGreen {
             0%, 100% { background-color: #212121; color: white; }
             50% { background-color: #4CAF50; color: white; }
@@ -35,25 +34,21 @@
             0%, 100% { background-color: #212121; color: white; }
             50% { background-color: #F44336; color: white; }
         }
-
-        /* Text Blinking Animation for Stop Action */
         @keyframes textBlink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.2; }
         }
         .text-blink { animation: textBlink 0.5s ease 4; }
 
-        /* Solid Stage Colors applied to the whole screen and top section */
         body.stage-green, body.stage-green #top-section { background-color: #4CAF50 !important; color: white; }
         body.stage-yellow, body.stage-yellow #top-section { background-color: #FFC107 !important; color: black; }
         body.stage-red, body.stage-red #top-section { background-color: #F44336 !important; color: white; }
 
-        /* Breathing Stage Colors applied to the whole screen and top section */
         body.blink-green, body.blink-green #top-section { animation: breatheGreen 3s ease-in-out infinite; }
         body.blink-yellow, body.blink-yellow #top-section { animation: breatheYellow 3s ease-in-out infinite; }
         body.blink-red, body.blink-red #top-section { animation: breatheRed 3s ease-in-out infinite; }
 
-        /* Top Section — normal document flow (NOT sticky/frozen any more) */
+        /* Top Section — normal document flow (not sticky/frozen) */
         #top-section {
             background-color: #212121;
             padding: 20px;
@@ -98,6 +93,74 @@
             animation: blinkColon 1s infinite;
         }
 
+        /* Start / Stop 3D Buttons */
+        .buttons {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            max-width: 500px;
+        }
+        .buttons button {
+            flex: 1;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid white;
+            border-radius: 10px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+            transition: transform 0.1s ease, box-shadow 0.1s ease, font-size 0.15s ease, padding 0.15s ease;
+            user-select: none;
+        }
+        #startBtn {
+            background-color: #4CAF50;
+            box-shadow: 0 6px 0 #2E7D32, 0 8px 10px rgba(0,0,0,0.3);
+        }
+        #startBtn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #2E7D32, 0 4px 6px rgba(0,0,0,0.3);
+        }
+        #stopBtn {
+            background-color: #F44336;
+            box-shadow: 0 6px 0 #C62828, 0 8px 10px rgba(0,0,0,0.3);
+        }
+        #stopBtn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #C62828, 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        /* Compact control row: small fullscreen button + zoom controls, same row */
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .control-row button {
+            background-color: #555;
+            border: 1px solid #777;
+            color: white;
+            border-radius: 8px;
+            padding: 7px 13px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #333;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .control-row button:active {
+            transform: translateY(3px);
+            box-shadow: 0 0 0 #333;
+        }
+        #fullscreenBtn {
+            background-color: #673AB7;
+            border-color: #8561c5;
+            box-shadow: 0 3px 0 #4527A0;
+        }
+
         /* Content */
         #content {
             padding: 15px;
@@ -108,89 +171,7 @@
             gap: 15px;
         }
 
-        /* Collapsible Meeting Setup panel */
-        #setupPanel {
-            background: rgba(255,255,255,0.06);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        #setupPanel summary {
-            cursor: pointer;
-            padding: 14px 16px;
-            font-weight: bold;
-            font-size: 15px;
-            list-style: none;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(255,255,255,0.08);
-            user-select: none;
-        }
-        #setupPanel summary::-webkit-details-marker { display: none; }
-        #setupPanel summary::marker { content: ''; }
-        #setupPanel summary::after {
-            content: '▸';
-            transition: transform 0.15s ease;
-            opacity: 0.7;
-        }
-        #setupPanel[open] summary::after {
-            transform: rotate(90deg);
-        }
-        .setup-inner {
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        /* Preset Section */
-        .preset-section {
-            background: rgba(255,255,255,0.07);
-            padding: 14px;
-            border-radius: 10px;
-        }
-        .preset-label {
-            font-size: 14px;
-            opacity: 0.7;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-        .preset-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            align-items: center;
-        }
-        #presetSelect, #newPresetName {
-            flex: 1;
-            min-width: 140px;
-            font-size: 15px;
-            padding: 8px;
-            border-radius: 6px;
-            background: #333;
-            color: white;
-            border: 1px solid #555;
-        }
-        #newPresetName::placeholder { color: #999; }
-        .preset-btn {
-            padding: 8px 14px;
-            font-size: 14px;
-            font-weight: bold;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            color: white;
-            white-space: nowrap;
-        }
-        #savePresetBtn { background-color: #2196F3; }
-        #deletePresetBtn { background-color: #F44336; display: none; }
-        .preset-hint {
-            font-size: 11px;
-            opacity: 0.6;
-            margin-top: 6px;
-        }
-
-        /* Settings Grid */
+        /* Settings Grid — always visible */
         .settings-grid {
             display: grid;
             grid-template-columns: max-content max-content max-content max-content;
@@ -237,154 +218,54 @@
             margin: 0;
         }
 
-        #testSoundBtn {
-            width: 100%;
-            padding: 12px;
-            font-size: 15px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            color: white;
-            font-weight: bold;
-            background-color: #9C27B0;
-        }
-
-        /* Start / Stop 3D Buttons */
-        .buttons {
-            display: flex;
-            gap: 15px;
-            width: 100%;
-            max-width: 500px;
-        }
-        .buttons button {
-            flex: 1;
-            padding: 15px;
-            font-size: 18px;
-            border: 2px solid white;
+        /* Preset Section — sits right below the settings grid */
+        .preset-section {
+            background: rgba(255,255,255,0.07);
+            padding: 14px;
             border-radius: 10px;
-            cursor: pointer;
-            color: white;
+        }
+        .preset-label {
+            font-size: 14px;
+            opacity: 0.7;
             font-weight: bold;
-            transition: transform 0.1s ease, box-shadow 0.1s ease, font-size 0.15s ease, padding 0.15s ease;
-            user-select: none;
+            margin-bottom: 8px;
         }
-        #startBtn {
-            background-color: #4CAF50;
-            box-shadow: 0 6px 0 #2E7D32, 0 8px 10px rgba(0,0,0,0.3);
-        }
-        #startBtn:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 #2E7D32, 0 4px 6px rgba(0,0,0,0.3);
-        }
-        #stopBtn {
-            background-color: #F44336;
-            box-shadow: 0 6px 0 #C62828, 0 8px 10px rgba(0,0,0,0.3);
-        }
-        #stopBtn:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 #C62828, 0 4px 6px rgba(0,0,0,0.3);
-        }
-
-        /* Fullscreen main button */
-        .fullscreen-main-btn {
-            width: 100%;
-            max-width: 500px;
-            padding: 12px;
-            font-size: 16px;
-            font-weight: bold;
-            color: white;
-            background-color: #673AB7;
-            border: 2px solid white;
-            border-radius: 10px;
-            cursor: pointer;
-            box-shadow: 0 6px 0 #4527A0, 0 8px 10px rgba(0,0,0,0.3);
-            user-select: none;
-        }
-        .fullscreen-main-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 #4527A0, 0 4px 6px rgba(0,0,0,0.3);
-        }
-
-        /* Zoom Controls (secondary, small) */
-        .zoom-controls {
+        .preset-row {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            opacity: 0.85;
-        }
-        .zoom-caption {
-            font-size: 12px;
-            opacity: 0.75;
-            padding: 0 2px;
-        }
-        .zoom-btn, .zoom-reset-btn {
-            background-color: #555;
-            border: 1px solid #777;
-            color: white;
-            border-radius: 8px;
-            padding: 6px 12px;
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 3px 0 #333;
-            transition: transform 0.1s ease, box-shadow 0.1s ease;
-            user-select: none;
-        }
-        .zoom-btn:active, .zoom-reset-btn:active {
-            transform: translateY(3px);
-            box-shadow: 0 0 0 #333;
-        }
-
-        .action-buttons-row {
-            display: flex;
-            gap: 10px;
-            width: 100%;
             flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
         }
-        .action-buttons-row button {
+        #presetSelect, #newPresetName {
             flex: 1;
-            min-width: 120px;
-            padding: 10px 14px;
+            min-width: 140px;
             font-size: 15px;
+            padding: 8px;
+            border-radius: 6px;
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+        }
+        #newPresetName::placeholder { color: #999; }
+        .preset-btn {
+            padding: 8px 14px;
+            font-size: 14px;
+            font-weight: bold;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
             color: white;
-            font-weight: bold;
-            text-align: center;
+            white-space: nowrap;
         }
-        #exportBtn { background-color: #2196F3; }
-        #deleteModeBtn { background-color: #E91E63; }
-        #newMeetingBtn { background-color: #FF9800; }
-
-        .delete-btn {
-            background-color: #F44336;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 5px 10px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .delete-btn:hover { background-color: #D32F2F; }
-        .delete-btn:disabled {
-            background-color: #666;
-            cursor: not-allowed;
+        #savePresetBtn { background-color: #2196F3; }
+        #deletePresetBtn { background-color: #F44336; display: none; }
+        .preset-hint {
+            font-size: 11px;
+            opacity: 0.6;
+            margin-top: 6px;
         }
 
-        .note-text {
-            font-size: 12px;
-            opacity: 0.8;
-        }
-        .note-text a {
-            color: #4CAF50;
-            text-decoration: none;
-        }
-        .note-text a:hover {
-            text-decoration: underline;
-        }
-
+        /* Speaker Log */
         #logSection {
             margin-top: 4px;
         }
@@ -402,7 +283,6 @@
             background-color: #212121;
             border-radius: 8px;
         }
-
         .log-table {
             width: 100%;
             border-collapse: collapse;
@@ -427,7 +307,6 @@
         .log-table tr:last-child td {
             border-bottom: none;
         }
-
         .editable-name {
             font-weight: bold;
             border-bottom: 1px dashed rgba(255,255,255,0.4);
@@ -441,7 +320,6 @@
             border-bottom: 1px solid white;
             background: rgba(255,255,255,0.1);
         }
-
         .live-badge {
             color: #4CAF50;
             font-weight: bold;
@@ -453,6 +331,56 @@
         @keyframes pulseDot {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
+        }
+        .delete-btn {
+            background-color: #F44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .delete-btn:hover { background-color: #D32F2F; }
+        .delete-btn:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+
+        /* Bottom utility row — Test Sound, Export, Delete, New Meeting: lowest on the page */
+        .action-buttons-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+        .action-buttons-row button {
+            flex: 1;
+            min-width: 120px;
+            padding: 10px 14px;
+            font-size: 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+        #testSoundBtn { background-color: #9C27B0; }
+        #exportBtn { background-color: #2196F3; }
+        #deleteModeBtn { background-color: #E91E63; }
+        #newMeetingBtn { background-color: #FF9800; }
+
+        .note-text {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        .note-text a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .note-text a:hover {
+            text-decoration: underline;
         }
 
         /* ===================== FULLSCREEN / BIG-SCREEN MODE ===================== */
@@ -497,23 +425,32 @@
             font-size: clamp(20px, 4.5vw, 36px);
             padding: clamp(14px, 3vw, 26px);
         }
-        body.fs-mode .zoom-controls {
+        /* Only the exit-fullscreen button stays; zoom +/- /reset are hidden in fullscreen */
+        body.fs-mode .zoom-only-btn {
             display: none;
         }
-        body.fs-mode .fullscreen-main-btn {
+        body.fs-mode #fullscreenBtn {
             position: fixed;
-            top: max(14px, env(safe-area-inset-top));
-            right: max(14px, env(safe-area-inset-right));
-            width: auto;
-            max-width: none;
-            padding: 8px 14px;
-            font-size: 13px;
-            box-shadow: 0 3px 0 #4527A0, 0 4px 6px rgba(0,0,0,0.3);
+            bottom: max(14px, env(safe-area-inset-bottom));
+            left: max(14px, env(safe-area-inset-left));
+            top: auto;
+            right: auto;
             z-index: 1100;
         }
+        /* Landscape: shrink everything so the full MM:SS clock actually fits on screen */
         @media (orientation: landscape) {
+            body.fs-mode #top-section {
+                gap: clamp(4px, 1vh, 10px);
+            }
+            body.fs-mode .fs-speaker-label {
+                font-size: clamp(14px, 3vw, 22px);
+            }
             body.fs-mode #timerDisplay {
-                font-size: min(32vw, 62vh) !important;
+                font-size: min(26vw, 40vh) !important;
+            }
+            body.fs-mode .buttons button {
+                font-size: clamp(16px, 3.5vw, 26px);
+                padding: clamp(10px, 2vw, 16px);
             }
         }
     </style>
@@ -530,77 +467,72 @@
             <button id="startBtn" onclick="startTimer()">▶ Start</button>
             <button id="stopBtn" onclick="stopTimer()">■ Stop</button>
         </div>
-        <button id="fullscreenBtn" class="fullscreen-main-btn" onclick="toggleFullscreen()">⛶ Enter Fullscreen for Meeting</button>
-        <div class="zoom-controls">
-            <button class="zoom-btn" onclick="changeZoom(-1)">−</button>
-            <span class="zoom-caption">Clock size</span>
-            <button class="zoom-btn" onclick="changeZoom(1)">+</button>
-            <button class="zoom-reset-btn" onclick="resetZoom()">Reset</button>
+        <div class="control-row">
+            <button id="fullscreenBtn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+            <button class="zoom-only-btn" onclick="changeZoom(-1)">−</button>
+            <button class="zoom-only-btn" onclick="changeZoom(1)">+</button>
+            <button class="zoom-only-btn" onclick="resetZoom()">Reset</button>
         </div>
     </div>
 
     <div id="content">
 
-        <details id="setupPanel" open>
-            <summary>⚙️ Meeting Setup — Presets &amp; Stage Timings</summary>
-            <div class="setup-inner">
+        <!-- Stage timings — always visible -->
+        <div class="settings-grid">
+            <div class="grid-header">Stage</div>
+            <div class="grid-header">Time(m:s)</div>
+            <div class="grid-header">Blink</div>
+            <div class="grid-header">Sound</div>
 
-                <div class="preset-section">
-                    <div class="preset-label">Preset Timings (loads times, blink &amp; sound together)</div>
-                    <div class="preset-row">
-                        <select id="presetSelect" onchange="onPresetSelectChange()"></select>
-                        <button class="preset-btn" id="deletePresetBtn" onclick="deleteSelectedPreset()">🗑 Delete</button>
-                    </div>
-                    <div class="preset-row" style="margin-top:10px;">
-                        <input type="text" id="newPresetName" placeholder="New preset name...">
-                        <button class="preset-btn" id="savePresetBtn" onclick="saveCurrentAsPreset()">💾 Save Current as Preset</button>
-                    </div>
-                    <div class="preset-hint">Picking a preset instantly loads its times, blink and sound settings below. Saving reuses a matching name to overwrite it, so you can edit any preset by tweaking the settings and saving over it.</div>
-                </div>
-
-                <div class="settings-grid">
-                    <div class="grid-header">Stage</div>
-                    <div class="grid-header">Time(m:s)</div>
-                    <div class="grid-header">Blink</div>
-                    <div class="grid-header">Sound</div>
-
-                    <div class="stage-label" style="color: #4CAF50;">Green</div>
-                    <div class="time-inputs">
-                        <select id="greenMin" class="time-select"></select>:<select id="greenSec" class="time-select"></select>
-                    </div>
-                    <div><input type="checkbox" id="greenBlink"></div>
-                    <div><input type="checkbox" id="greenSound"></div>
-
-                    <div class="stage-label" style="color: #FFC107;">Yellow</div>
-                    <div class="time-inputs">
-                        <select id="yellowMin" class="time-select"></select>:<select id="yellowSec" class="time-select"></select>
-                    </div>
-                    <div><input type="checkbox" id="yellowBlink"></div>
-                    <div><input type="checkbox" id="yellowSound"></div>
-
-                    <div class="stage-label" style="color: #F44336;">Red</div>
-                    <div class="time-inputs">
-                        <select id="redMin" class="time-select"></select>:<select id="redSec" class="time-select"></select>
-                    </div>
-                    <div><input type="checkbox" id="redBlink"></div>
-                    <div><input type="checkbox" id="redSound"></div>
-                </div>
-
-                <button id="testSoundBtn" onclick="testSoundManually()">🔊 Test Sound</button>
+            <div class="stage-label" style="color: #4CAF50;">Green</div>
+            <div class="time-inputs">
+                <select id="greenMin" class="time-select"></select>:<select id="greenSec" class="time-select"></select>
             </div>
-        </details>
+            <div><input type="checkbox" id="greenBlink"></div>
+            <div><input type="checkbox" id="greenSound"></div>
 
-        <div class="action-buttons-row">
-            <button id="exportBtn" onclick="exportPDF()">📄 Export Report</button>
-            <button id="deleteModeBtn" onclick="toggleDeleteMode()">🗑 Delete Speaker</button>
-            <button id="newMeetingBtn" onclick="startNewMeeting()">🔄 New Meeting</button>
+            <div class="stage-label" style="color: #FFC107;">Yellow</div>
+            <div class="time-inputs">
+                <select id="yellowMin" class="time-select"></select>:<select id="yellowSec" class="time-select"></select>
+            </div>
+            <div><input type="checkbox" id="yellowBlink"></div>
+            <div><input type="checkbox" id="yellowSound"></div>
+
+            <div class="stage-label" style="color: #F44336;">Red</div>
+            <div class="time-inputs">
+                <select id="redMin" class="time-select"></select>:<select id="redSec" class="time-select"></select>
+            </div>
+            <div><input type="checkbox" id="redBlink"></div>
+            <div><input type="checkbox" id="redSound"></div>
         </div>
-        <div class="note-text">Keep a paper backup too — refreshing the page erases all data (use 🔄 New Meeting instead to start fresh for the next one). Tap a speaker's name below to rename them. Test your sound under Meeting Setup before things get going. For feedback click here <a href="mailto:alexkurian@live.com">Email</a></div>
+
+        <!-- Presets — right below the stage timings table -->
+        <div class="preset-section">
+            <div class="preset-label">Preset Timings (loads times, blink &amp; sound together)</div>
+            <div class="preset-row">
+                <select id="presetSelect" onchange="onPresetSelectChange()"></select>
+                <button class="preset-btn" id="deletePresetBtn" onclick="deleteSelectedPreset()">🗑 Delete</button>
+            </div>
+            <div class="preset-row" style="margin-top:10px;">
+                <input type="text" id="newPresetName" placeholder="New preset name...">
+                <button class="preset-btn" id="savePresetBtn" onclick="saveCurrentAsPreset()">💾 Save Current as Preset</button>
+            </div>
+            <div class="preset-hint">Picking a preset instantly loads its times, blink and sound settings above. Saving reuses a matching name to overwrite it, so you can edit any preset by tweaking the settings and saving over it.</div>
+        </div>
 
         <div id="logSection">
             <div class="log-header-text">Speaker Log</div>
             <div id="logTableContainer"></div>
         </div>
+
+        <!-- Everything below is the lowest part of the page -->
+        <div class="action-buttons-row">
+            <button id="testSoundBtn" onclick="testSoundManually()">🔊 Test Sound</button>
+            <button id="exportBtn" onclick="exportPDF()">📄 Export Report</button>
+            <button id="deleteModeBtn" onclick="toggleDeleteMode()">🗑 Delete Speaker</button>
+            <button id="newMeetingBtn" onclick="startNewMeeting()">🔄 New Meeting</button>
+        </div>
+        <div class="note-text">Keep a paper backup too — refreshing the page erases all data (use 🔄 New Meeting instead to start fresh for the next one). Tap a speaker's name above to rename them. For feedback click here <a href="mailto:alexkurian@live.com">Email</a></div>
     </div>
 
     <script>
@@ -778,7 +710,6 @@
                         select.appendChild(opt);
                     }
                 } else {
-                    // Seconds picker: multiples of 5 (0,5,10,...,55)
                     for (let i = 0; i <= 55; i += 5) {
                         let opt = document.createElement('option');
                         opt.value = i;
@@ -838,15 +769,10 @@
         }
 
         // ===================== FULLSCREEN =====================
-        // The visual "big screen" mode (the .fs-mode class) is applied immediately and
-        // unconditionally on tap, so the timer always fills the screen even on browsers
-        // (many mobile browsers, in-app webviews) that don't support or allow the real
-        // Fullscreen API. The native API is still attempted as a bonus, best-effort, to
-        // also hide the browser address bar where that's supported.
         function updateFullscreenButtonLabel(isFs) {
             const btn = document.getElementById('fullscreenBtn');
             if (!btn) return;
-            btn.innerHTML = isFs ? '⤢ Exit Fullscreen' : '⛶ Enter Fullscreen for Meeting';
+            btn.innerHTML = isFs ? '⤢ Exit' : '⛶ Fullscreen';
         }
 
         function enterFullscreenMode() {
@@ -891,9 +817,6 @@
 
         function handleNativeFullscreenChange() {
             const isNativeFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
-            // If the browser's own fullscreen was exited (ESC key, back gesture, browser
-            // control) while our big-screen mode is still on, drop it too so we don't get
-            // stuck showing the overlay next to browser chrome.
             if (!isNativeFs && document.body.classList.contains('fs-mode')) {
                 document.body.classList.remove('fs-mode');
                 updateFullscreenButtonLabel(false);
@@ -949,8 +872,6 @@
         }
 
         // Sets the body's stage-color class while always preserving fs-mode.
-        // (Previously Start/Stop wiped the whole className, which silently kicked
-        // the screen out of fullscreen the moment a timer began — fixed here.)
         function setStageClass(cls) {
             const wasFs = document.body.classList.contains('fs-mode');
             document.body.className = '';
@@ -987,7 +908,6 @@
 
                 speakerCount++;
                 activeLogId = speakerCount;
-                // No popup: speaker gets a default name and can be renamed by tapping it in the log.
                 logs.unshift({
                     id: activeLogId,
                     title: `Speaker ${speakerCount}`,
@@ -1095,7 +1015,7 @@
             setStageClass(stageClass);
         }
 
-        // ===================== LOG MANAGEMENT (id-based, not index-based) =====================
+        // ===================== LOG MANAGEMENT (id-based) =====================
         function saveEditedName(id, element) {
             const log = logs.find(l => l.id === id);
             if (log) log.title = element.innerText;
@@ -1112,8 +1032,6 @@
             if (idx === -1) return;
             const log = logs[idx];
 
-            // Guard against corrupting the running timer's entry: block deleting the
-            // speaker who is currently being timed until the clock is stopped.
             if (running && log.id === activeLogId) {
                 alert('Please stop the timer for this speaker before deleting their log.');
                 return;
@@ -1149,8 +1067,6 @@
                     <tbody>
             `;
 
-            // logs are stored newest-first; the # column counts up from the oldest (=1),
-            // recalculated from array position every render so it auto-renumbers on delete.
             logs.forEach((log, index) => {
                 const displayNumber = logs.length - index;
                 const timeFrame = log.endTime
